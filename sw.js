@@ -1,7 +1,7 @@
 /* BirdHunt service worker.
    Cache-first for the app shell. Bump CACHE on every deploy or the old
    index.html will keep being served from cache. */
-const CACHE = "birdhunt-v1.0.0";
+const CACHE = "birdhunt-v1.1.0";
 const SHELL = ["./", "./index.html", "./manifest.webmanifest"];
 
 self.addEventListener("install", e => {
