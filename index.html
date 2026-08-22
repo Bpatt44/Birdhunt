@@ -194,7 +194,7 @@ nav button svg{width:21px;height:21px}
 <body>
 
 <header>
-  <div class="brand"><h1>BirdHunt</h1><span id="ver">v1.3</span></div>
+  <div class="brand"><h1>BirdHunt</h1><span id="ver">v1.3.1</span></div>
   <div class="ctx" id="ctx"></div>
 </header>
 
@@ -632,7 +632,26 @@ $$("nav button").forEach(b=>b.onclick=()=>{
 
 /* ---------- boot ---------- */
 load(); renderSettings(); renderCtx(); renderFilters(); renderLog();
-if("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js").catch(()=>{});
+/* Register the worker and actively check for updates. If a new build is found,
+   activate it immediately and reload once — no more stale builds on mobile. */
+if("serviceWorker" in navigator){
+  navigator.serviceWorker.register("sw.js").then(reg=>{
+    reg.update();
+    setInterval(()=>reg.update(), 60*60*1000);
+    reg.addEventListener("updatefound",()=>{
+      const w=reg.installing; if(!w) return;
+      w.addEventListener("statechange",()=>{
+        if(w.state==="installed" && navigator.serviceWorker.controller){
+          w.postMessage("SKIP_WAITING");
+        }
+      });
+    });
+  }).catch(()=>{});
+  let reloaded=false;
+  navigator.serviceWorker.addEventListener("controllerchange",()=>{
+    if(reloaded) return; reloaded=true; location.reload();
+  });
+}
 </script>
 </body>
 </html>
