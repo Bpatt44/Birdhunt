@@ -42,6 +42,16 @@ main{flex:1 1 auto;overflow-y:auto;-webkit-overflow-scrolling:touch;position:rel
 .view{display:none;padding:10px 12px 16px}
 .view.on{display:block}
 
+/* A single generic bird shape. Deliberately says nothing about the species —
+   the whole point is that you do not know what you are tapping. */
+const SILHOUETTE = `<svg viewBox="0 0 260 190" xmlns="http://www.w3.org/2000/svg">
+ <path d="M197 80 C201 68 197 54 185 49 C173 44 160 49 155 60 C150 69 144 74 134 79
+          C115 87 96 93 82 103 C70 112 66 122 74 130 C86 141 108 145 128 143
+          C150 141 169 131 181 115 C190 103 195 90 197 80 Z" fill="#cfe0d6"/>
+ <path d="M100 97 C76 99 48 106 24 119 C22 124 26 130 32 133 C56 122 78 116 100 114 Z" fill="#cfe0d6"/>
+ <path d="M192 64 C199 62 204 66 204 69 C202 73 195 74 191 72 Z" fill="#cfe0d6"/>
+</svg>`;
+
 /* ---------- scan ---------- */
 #field{
   position:relative;width:100%;
@@ -191,6 +201,65 @@ h3:first-of-type{border-top:none;padding-top:0;margin-top:4px}
   text-align:center;font-size:12px;color:#cfe0d6;text-shadow:0 2px 8px #000;padding:0 22px;line-height:1.5}
 .vlock-msg b{display:block;font-size:15px;margin-bottom:3px}
 
+
+/* ---------- mystery blip: an unfound bird is a shape, not a species ------ */
+.blip.unknown .mystery{position:absolute;inset:0;display:flex;align-items:center;
+  justify-content:center;border-radius:50%;overflow:hidden;
+  background:radial-gradient(circle at 42% 36%,#28453a,#0d1a14 72%);
+  border:2px solid rgba(255,255,255,.22);box-shadow:0 4px 10px rgba(0,0,0,.55)}
+.blip.unknown .mystery svg{width:64%;height:64%;opacity:.5}
+.blip.unknown .mystery::after{content:"";position:absolute;inset:0;
+  background:linear-gradient(115deg,transparent 40%,rgba(255,255,255,.22) 50%,transparent 60%);
+  background-size:250% 100%;animation:mysh 2.6s ease-in-out infinite}
+@keyframes mysh{0%{background-position:130% 0}100%{background-position:-40% 0}}
+.blip.unknown[data-t="A"] .mystery,
+.blip.unknown[data-t="X"] .mystery{border-color:rgba(255,255,255,.4)}
+
+/* ---------- reveal ------------------------------------------------------ */
+#modal.revealing{background:rgba(2,6,4,.95)}
+.reveal{position:fixed;inset:0;z-index:80;display:flex;align-items:center;
+  justify-content:center;flex-direction:column;pointer-events:auto}
+.reveal .slab{width:190px;height:266px;border-radius:16px;position:relative;
+  background:linear-gradient(160deg,#1d3a2d,#0d1a14);border:2px solid var(--rc,#7fc4a0);
+  transform:scale(.55);opacity:0;overflow:hidden;
+  animation:slabIn var(--t1,700ms) cubic-bezier(.2,.9,.3,1) forwards}
+@keyframes slabIn{
+  0%{transform:scale(.5) rotateY(28deg);opacity:0}
+  55%{opacity:1}
+  100%{transform:scale(1) rotateY(0);opacity:1}}
+.reveal .slab .glow{position:absolute;inset:-40%;
+  background:conic-gradient(from 0deg,transparent,var(--rc,#7fc4a0),transparent 42%);
+  animation:spin 1.5s linear infinite;opacity:.55}
+.reveal .slab .core{position:absolute;inset:2px;border-radius:13px;
+  background:linear-gradient(160deg,#1a3427,#0b1710);display:flex;align-items:center;
+  justify-content:center}
+.reveal .slab .core svg{width:62%;opacity:.42;filter:grayscale(1)}
+.reveal .slab .shimmer{position:absolute;inset:0;
+  background:linear-gradient(105deg,transparent 42%,rgba(255,255,255,.5) 50%,transparent 58%);
+  background-size:230% 100%;animation:sw 1.15s ease-in-out infinite}
+.reveal .word{margin-top:20px;font-size:12px;letter-spacing:2.6px;text-transform:uppercase;
+  color:var(--rc,#7fc4a0);opacity:0;animation:fadeUp 500ms ease 260ms forwards}
+@keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:.9;transform:none}}
+.reveal.bang .slab{animation:slabBang 460ms cubic-bezier(.2,1.6,.4,1) forwards}
+@keyframes slabBang{0%{transform:scale(1)}38%{transform:scale(1.5)}100%{transform:scale(2.4);opacity:0}}
+.reveal.bang .word{animation:none;opacity:0;transition:opacity .16s}
+.flash{position:fixed;inset:0;z-index:79;background:#fff;opacity:0;pointer-events:none}
+.flash.on{animation:fl 420ms ease-out forwards}
+@keyframes fl{0%{opacity:0}12%{opacity:.82}100%{opacity:0}}
+.found{position:fixed;left:0;right:0;top:50%;z-index:81;text-align:center;
+  transform:translateY(-50%);pointer-events:none;opacity:0}
+.found.on{animation:foundIn 1.5s ease forwards}
+@keyframes foundIn{0%{opacity:0;transform:translateY(-50%) scale(.7)}
+  16%{opacity:1;transform:translateY(-50%) scale(1.06)}
+  26%{transform:translateY(-50%) scale(1)}
+  78%{opacity:1}100%{opacity:0}}
+.found b{display:block;font-size:26px;letter-spacing:.5px;
+  text-shadow:0 4px 22px rgba(0,0,0,.9),0 0 30px var(--rc,#7fc4a0)}
+.found span{display:block;font-size:11px;letter-spacing:3.4px;text-transform:uppercase;
+  color:var(--rc,#7fc4a0);margin-bottom:5px}
+.skiphint{position:fixed;bottom:34px;left:0;right:0;text-align:center;z-index:82;
+  font-size:10.5px;color:#6d8a7c;letter-spacing:1.2px}
+
 /* ---------- nav ---------- */
 nav{flex:0 0 auto;display:grid;grid-template-columns:repeat(4,1fr);
   border-top:1px solid var(--line);background:var(--bg2)}
@@ -302,7 +371,7 @@ nav button svg{width:21px;height:21px}
 <body>
 
 <header>
-  <div class="brand"><h1>BirdHunt</h1><span id="ver">v3.3.1</span></div>
+  <div class="brand"><h1>BirdHunt</h1><span id="ver">v3.4</span></div>
   <div class="ctx" id="ctx"></div>
 </header>
 
@@ -627,6 +696,16 @@ function jackOdds(p){
   return j>0?Math.round(1/j).toLocaleString():"never";
 }
 
+/* A single generic bird shape. Deliberately says nothing about the species —
+   the whole point is that you do not know what you are tapping. */
+const SILHOUETTE = `<svg viewBox="0 0 260 190" xmlns="http://www.w3.org/2000/svg">
+ <path d="M197 80 C201 68 197 54 185 49 C173 44 160 49 155 60 C150 69 144 74 134 79
+          C115 87 96 93 82 103 C70 112 66 122 74 130 C86 141 108 145 128 143
+          C150 141 169 131 181 115 C190 103 195 90 197 80 Z" fill="#cfe0d6"/>
+ <path d="M100 97 C76 99 48 106 24 119 C22 124 26 130 32 133 C56 122 78 116 100 114 Z" fill="#cfe0d6"/>
+ <path d="M192 64 C199 62 204 66 204 69 C202 73 195 74 191 72 Z" fill="#cfe0d6"/>
+</svg>`;
+
 /* ---------- scan ---------- */
 function scan(){
   const pool=currentPool();
@@ -646,11 +725,20 @@ function scan(){
     el.style.left=(12+Math.random()*76)+"%";
     el.style.top =(12+Math.random()*74)+"%";
     el.style.animationDelay=(i*90)+"ms";
-    const bk=artFile(e.sp, variantFor(e.sp,e.sex,cfg.month).k);
-    el.innerHTML=`<div class="ring"></div><div class="ring2"></div>`
-      +(bk?`<img class="photo" src="art/${bk}-thumb.webp" alt="">`
-          :birdSVG(e.sp,56,e.shiny))
-      +`<div class="tierdot"></div>`;
+    const vk = variantFor(e.sp, e.sex, cfg.month).k;
+    const bk = artFile(e.sp, vk);
+    const rr = col[e.sp.i];
+    // Have we already got THIS form? If not the blip stays a mystery: you can
+    // see something is there and roughly how rare it is, but not what.
+    const known = !!(rr && rr.v && rr.v[vk]);
+    e.known = known;
+    if(known) el.classList.remove("unknown"); else el.classList.add("unknown");
+    el.innerHTML = `<div class="ring"></div><div class="ring2"></div>`
+      + (known
+          ? (bk ? `<img class="photo" src="art/${bk}-thumb.webp" alt="">`
+                : birdSVG(e.sp,56,e.shiny))
+          : `<div class="mystery">${SILHOUETTE}</div>`)
+      + `<div class="tierdot"></div>`;
     el.onclick=()=>collect(e,el);
     field.appendChild(el);
   }
@@ -663,18 +751,83 @@ function collect(e,el){
   r.c++; if(e.sex==="Male")r.M++; if(e.sex==="Female")r.F++;
   if(e.shiny)r.sh++; if(!r.t)r.t=Date.now();
   const vk = variantFor(e.sp, e.sex, cfg.month).k;
+  const firstOfForm = !(r.v[vk] > 0);
   r.v[vk] = (r.v[vk]||0) + 1;
-  e.vk = vk;
+  e.vk = vk; e.newForm = firstOfForm;
   save();
   const left=[...$("#field").querySelectorAll(".blip:not(.taken)")].length;
   $("#tally").textContent=left?`${left} still in range`:"Area cleared.";
-  showCard(e.sp,{isNew,shiny:e.shiny,sex:e.sex,vk:e.vk});
+  showCard(e.sp,{isNew,shiny:e.shiny,sex:e.sex,vk:e.vk,newForm:e.newForm});
   renderLog();
 }
 
 /* ---------- card ---------- */
+
+/* ==========================================================================
+   REVEAL
+   New form: a slab materialises, pulses, then bangs open into the card.
+   Length scales with tier — a Common is a beat, an Ancient is a moment.
+   Tapping anywhere skips straight to the card.
+   ========================================================================== */
+const REVEAL_MS = {C:700, U:900, R:1250, X:1650, A:2200};
+let revealTimers = [];
+function clearReveal(){
+  revealTimers.forEach(clearTimeout); revealTimers = [];
+  document.querySelectorAll(".reveal,.flash,.found,.skiphint").forEach(n=>n.remove());
+  $("#modal").classList.remove("revealing");
+}
+function revealThen(sp, ev, done){
+  const tv = getComputedStyle(document.documentElement)
+              .getPropertyValue(TIERS[sp.t][1]).trim();
+  const total = REVEAL_MS[sp.t];
+  const build = Math.round(total * 0.72);
+  $("#modal").classList.add("on","revealing");
+
+  const wrap = document.createElement("div");
+  wrap.className = "reveal";
+  wrap.style.setProperty("--rc", tv);
+  wrap.style.setProperty("--t1", Math.round(build*0.55)+"ms");
+  wrap.innerHTML =
+    `<div class="slab"><div class="glow"></div>
+       <div class="core">${SILHOUETTE}</div><div class="shimmer"></div></div>
+     <div class="word">${ev.shiny ? "Something is shining"
+                       : "AX".includes(sp.t) ? "Something rare" : "Identifying"}</div>`;
+  document.body.appendChild(wrap);
+
+  const hint = document.createElement("div");
+  hint.className = "skiphint"; hint.textContent = "tap to skip";
+  document.body.appendChild(hint);
+
+  let finished = false;
+  const finish = () => {
+    if(finished) return; finished = true;
+    revealTimers.forEach(clearTimeout); revealTimers = [];
+    wrap.remove(); hint.remove();
+    $("#modal").classList.remove("revealing");
+    done();
+  };
+  const bang = () => {
+    if(finished) return;
+    wrap.classList.add("bang");
+    const fl = document.createElement("div");
+    fl.className = "flash on"; document.body.appendChild(fl);
+    const fo = document.createElement("div");
+    fo.className = "found on"; fo.style.setProperty("--rc", tv);
+    fo.innerHTML = `<span>${ev.shiny ? "Shiny · " : ""}${TIERS[sp.t][0]} found</span><b>${sp.n}</b>`;
+    document.body.appendChild(fo);
+    revealTimers.push(setTimeout(()=>fl.remove(), 460));
+    revealTimers.push(setTimeout(()=>{ fo.remove(); finish(); }, 1450));
+    revealTimers.push(setTimeout(()=>{ wrap.remove(); hint.remove();
+      $("#modal").classList.remove("revealing"); if(!finished) done(); finished = true; }, 520));
+  };
+  revealTimers.push(setTimeout(bang, build));
+  wrap.onclick = finish; hint.onclick = finish;
+}
+
 function showCard(sp,ev){
   ev = ev || {};
+  if(ev.newForm){ const e2 = Object.assign({},ev,{newForm:false});
+                  return revealThen(sp, ev, () => showCard(sp, e2)); }
   const vs = variantsOf(sp);
   const r  = col[sp.i] || {c:0,M:0,F:0,sh:0,v:{}};
   const got = r.v || {};
@@ -775,7 +928,7 @@ function oneCard(sp, v, count, ev, isCurrent){
     </div>
   </div>`;
 }
-function closeCard(){$("#modal").classList.remove("on","deck");}
+function closeCard(){clearReveal();$("#modal").classList.remove("on","deck");}
 $("#modal").onclick=e=>{if(e.target.id==="modal")closeCard();};
 
 /* ---------- log ---------- */
