@@ -131,14 +131,46 @@ h3{font-size:12px;color:var(--accent);text-transform:uppercase;letter-spacing:.8
   margin:20px 0 10px;padding-top:14px;border-top:1px solid var(--line)}
 h3:first-of-type{border-top:none;padding-top:0;margin-top:4px}
 
+
+
+
 /* ---------- nav ---------- */
-nav{flex:0 0 auto;display:grid;grid-template-columns:repeat(3,1fr);
+nav{flex:0 0 auto;display:grid;grid-template-columns:repeat(4,1fr);
   border-top:1px solid var(--line);background:var(--bg2)}
 nav button{padding:10px 0 12px;font-size:10.5px;color:var(--dim);
   display:flex;flex-direction:column;align-items:center;gap:3px}
 nav button.on{color:var(--accent)}
 nav button svg{width:21px;height:21px}
 
+/* ---------- map ---------- */
+#mapwrap{position:relative;width:100%;height:calc(100vh - 210px);min-height:340px;
+  border-radius:14px;overflow:hidden;border:1px solid var(--line);
+  background:linear-gradient(180deg,#0d1a20,#0a1418);touch-action:none}
+#mapsvg{width:100%;height:100%;display:block;cursor:grab}
+#mapsvg.drag{cursor:grabbing}
+.rgn{fill:#1e3a2e;stroke:#2f5a46;stroke-width:1.2;transition:fill .15s}
+.rgn:hover{fill:#2a5442}
+.rgn.sel{fill:var(--accent);stroke:#bfe8d4;stroke-width:2}
+.rgnlbl{fill:#7fa08e;font-size:11px;text-anchor:middle;pointer-events:none;
+  font-family:-apple-system,sans-serif;font-weight:600}
+.rgn.sel + .rgnlbl{fill:#08120d}
+.site{fill:var(--gold);stroke:#0e1a15;stroke-width:1.5;cursor:pointer}
+.site:hover{fill:#ffd98a}
+.site.sel{fill:var(--coral);stroke:#fff;stroke-width:2}
+.sitelbl{fill:#c9b27a;font-size:8.5px;text-anchor:middle;pointer-events:none;
+  font-family:-apple-system,sans-serif}
+.pin{pointer-events:none}
+.mapbar{display:flex;gap:7px;align-items:center;margin-top:9px}
+.mapbar button{padding:11px 0;border-radius:10px;background:var(--panel);
+  border:1px solid var(--line);font-size:14px;font-weight:600;flex:1}
+.mapbar button.wide{flex:2.4;font-size:13px}
+#mapsel{margin-top:9px;padding:11px 13px;border-radius:10px;background:var(--panel2);
+  border:1px solid var(--line);font-size:13px;line-height:1.5}
+#mapsel b{color:var(--accent)}
+#mapsel .sub{color:var(--dim);font-size:11.5px}
+.maplegend{display:flex;gap:14px;font-size:10.5px;color:var(--dim);margin-top:8px;flex-wrap:wrap}
+.maplegend i{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:4px;
+  vertical-align:-1px}
 /* ---------- card modal ---------- */
 #modal{position:fixed;inset:0;z-index:60;display:none;align-items:center;justify-content:center;
   background:rgba(4,10,7,.86);backdrop-filter:blur(6px);padding:18px}
@@ -194,7 +226,7 @@ nav button svg{width:21px;height:21px}
 <body>
 
 <header>
-  <div class="brand"><h1>BirdHunt</h1><span id="ver">v1.6</span></div>
+  <div class="brand"><h1>BirdHunt</h1><span id="ver">v1.7</span></div>
   <div class="ctx" id="ctx"></div>
 </header>
 
@@ -215,6 +247,25 @@ nav button svg{width:21px;height:21px}
     <div class="progress"><i id="pgBar"></i></div>
     <div class="filters" id="filters"></div>
     <div id="grid"></div>
+  </section>
+
+
+  <!-- ============ MAP ============ -->
+  <section class="view" id="v-map">
+    <div id="mapwrap"><svg id="mapsvg" viewBox="0 0 640 1160" preserveAspectRatio="xMidYMid meet">
+      <g id="mapg"></g></svg></div>
+    <div class="mapbar">
+      <button id="mZoomIn">+</button>
+      <button id="mZoomOut">&minus;</button>
+      <button id="mReset" class="wide">Reset view</button>
+      <button id="mUse" class="wide">Use this area</button>
+    </div>
+    <div id="mapsel">Tap a region or a gold site marker.</div>
+    <div class="maplegend">
+      <span><i style="background:#1e3a2e;border:1px solid #2f5a46"></i>Region</span>
+      <span><i style="background:var(--gold)"></i>Named site</span>
+      <span><i style="background:var(--accent)"></i>Selected</span>
+    </div>
   </section>
 
   <!-- ============ SETTINGS ============ -->
@@ -248,6 +299,7 @@ nav button svg{width:21px;height:21px}
 
 <nav>
   <button data-v="scan" class="on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg>Scan</button>
+  <button data-v="map"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 4L3 6v14l6-2 6 2 6-2V4l-6 2-6-2z"/><path d="M9 4v14M15 6v14"/></svg>Map</button>
   <button data-v="log"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/></svg>Log</button>
   <button data-v="set"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M19.1 4.9L17 7M7 17l-2.1 2.1"/></svg>Settings</button>
 </nav>
@@ -625,12 +677,158 @@ $("#expBtn").onclick=()=>{
   const a=document.createElement("a");
   a.href=URL.createObjectURL(blob); a.download="birdhunt-collection.json"; a.click();};
 
+
+
+
+
+/* ==========================================================================
+   UK MAP — schematic, offline, no tile service.
+   Coordinates are lon/lat, projected equirectangular with a cos(lat)
+   correction so the country is not stretched sideways.
+   ========================================================================== */
+const MAPGEO = {
+ SCH:[[-5.0,58.63],[-4.4,58.55],[-3.05,58.64],[-3.6,58.0],[-3.9,57.6],[-4.4,57.5],[-4.8,56.9],[-5.1,56.7],[-5.6,56.6],[-6.2,57.4],[-5.4,58.2]],
+ SCE:[[-3.9,57.6],[-3.1,57.72],[-2.07,57.70],[-2.2,56.9],[-2.6,56.45],[-3.4,56.4],[-4.0,56.9],[-4.4,57.5]],
+ SCS:[[-4.0,56.9],[-3.4,56.4],[-2.6,56.45],[-2.8,56.0],[-1.8,55.6],[-3.0,55.0],[-4.8,54.9],[-5.0,55.4],[-5.6,56.0],[-5.1,56.7],[-4.8,56.9]],
+ NEE:[[-1.8,55.6],[-1.4,54.9],[-0.9,54.5],[-1.6,54.5],[-2.2,54.6],[-2.6,55.2],[-3.0,55.0]],
+ NWE:[[-3.0,55.0],[-2.6,55.2],[-2.2,54.6],[-2.4,54.0],[-2.6,53.4],[-3.1,53.4],[-3.0,54.1],[-3.4,54.5]],
+ YRK:[[-1.6,54.5],[-0.9,54.5],[-0.1,54.1],[0.15,53.6],[-0.7,53.5],[-1.8,53.5],[-2.4,54.0],[-2.2,54.6]],
+ MID:[[-1.8,53.5],[-0.7,53.5],[-0.3,52.9],[-0.4,52.2],[-1.6,51.9],[-2.6,52.0],[-3.0,52.6],[-2.6,53.4]],
+ EA :[[-0.3,52.9],[0.35,53.0],[0.5,52.9],[1.75,52.5],[1.3,51.9],[0.7,51.5],[0.0,51.6],[-0.4,52.2]],
+ SE :[[0.7,51.5],[1.4,51.1],[0.5,50.8],[-1.0,50.7],[-1.6,51.0],[-1.6,51.9],[0.0,51.6]],
+ SW :[[-1.6,51.0],[-1.6,51.9],[-2.6,52.0],[-3.0,51.4],[-4.2,51.2],[-4.7,50.6],[-5.7,50.1],[-5.0,50.0],[-3.5,50.2],[-2.5,50.6]],
+ WAL:[[-3.0,52.6],[-2.6,52.0],[-3.0,51.4],[-4.0,51.6],[-5.3,51.7],[-4.5,52.8],[-4.8,53.3],[-3.1,53.4],[-2.6,53.4]],
+ ISL:[[-7.6,58.5],[-6.9,58.5],[-6.1,57.6],[-7.1,56.8],[-7.6,57.5]]
+};
+/* extra unlabelled pieces so the map reads as the UK, click-through to a region */
+const MAPEXTRA = [
+ ["ISL",[[-3.4,59.15],[-2.4,59.3],[-2.6,58.75],[-3.4,58.8]]],                 // Orkney
+ ["ISL",[[-1.6,60.85],[-0.8,60.75],[-1.0,59.85],[-1.5,60.0]]],                // Shetland
+ ["ISL",[[-7.3,56.5],[-6.8,56.6],[-6.9,56.3],[-7.4,56.3]]],                   // Barra
+ ["SCS",[[-6.5,55.9],[-5.9,55.9],[-6.0,55.55],[-6.5,55.6]]],                  // Islay
+ ["SCS",[[-6.4,56.6],[-5.9,56.55],[-6.0,56.3],[-6.5,56.35]]],                 // Mull
+ ["WAL",[[-4.7,53.42],[-4.1,53.4],[-4.2,53.15],[-4.7,53.2]]],                 // Anglesey
+ ["SE" ,[[-1.6,50.72],[-1.1,50.72],[-1.15,50.57],[-1.55,50.6]]],              // Isle of Wight
+ ["SW" ,[[-6.4,49.98],[-6.25,49.98],[-6.28,49.9],[-6.4,49.9]]],               // Scilly
+ ["NWE",[[-4.8,54.42],[-4.3,54.4],[-4.4,54.05],[-4.8,54.1]]]                  // Isle of Man
+];
+const SITEPOS = {
+ CAIRN:[-3.75,57.15], WROSS:[-5.15,57.85], OUTHEB:[-7.2,57.5], ORKSHE:[-2.9,59.0],
+ ISLAY:[-6.2,55.75],  ANGLE:[-4.4,53.28],  PEMBS:[-4.9,51.85], WYE:[-2.7,51.85],
+ CORNW:[-5.2,50.25],  SDEVON:[-3.6,50.42], SOMLEV:[-2.85,51.15], WESSEX:[-1.9,51.2],
+ NFOR:[-1.6,50.87],   KNEPP:[-0.35,51.0],  BRECK:[0.65,52.45],  BROADS:[1.5,52.7],
+ FARNES:[-1.6,55.55]
+};
+const MP = ([lon,lat]) => [ (lon+8.8)*57.4, (61.2-lat)*100 ];
+let mapView={k:1,x:0,y:0}, mapSel=cfg.region;
+
+function buildMap(){
+  const g=document.getElementById("mapg"); if(!g) return;
+  let s="";
+  const poly=(pts,cls,code)=>`<polygon class="${cls}" data-r="${code}" points="${
+    pts.map(p=>MP(p).join(",")).join(" ")}"/>`;
+  for(const [code,pts] of MAPEXTRA) s+=poly(pts,"rgn"+(mapSel===code?" sel":""),code);
+  for(const code in MAPGEO){
+    const pts=MAPGEO[code];
+    s+=poly(pts,"rgn"+(mapSel===code?" sel":""),code);
+    const cx=pts.reduce((a,p)=>a+MP(p)[0],0)/pts.length;
+    const cy=pts.reduce((a,p)=>a+MP(p)[1],0)/pts.length;
+    s+=`<text class="rgnlbl" x="${cx}" y="${cy}">${code}</text>`;
+  }
+  for(const code in SITEPOS){
+    const [x,y]=MP(SITEPOS[code]);
+    s+=`<circle class="site${mapSel===code?" sel":""}" data-r="${code}" cx="${x}" cy="${y}" r="7"/>`;
+    if(mapView.k>1.6) s+=`<text class="sitelbl" x="${x}" y="${y-11}">${RNAME[code]}</text>`;
+  }
+  if(SITEPOS[mapSel]||MAPGEO[mapSel]){
+    const p = SITEPOS[mapSel] ? MP(SITEPOS[mapSel])
+      : (()=>{const q=MAPGEO[mapSel];return [q.reduce((a,z)=>a+MP(z)[0],0)/q.length,
+                                             q.reduce((a,z)=>a+MP(z)[1],0)/q.length];})();
+    s+=`<g class="pin" transform="translate(${p[0]},${p[1]})">
+      <path d="M0 -4 C 7 -20 22 -20 22 -34 A 11 11 0 1 0 -0 -34 Z" transform="scale(.7)"
+        fill="var(--coral)" stroke="#fff" stroke-width="2"/>
+      <circle cx="0" cy="-23" r="4" fill="#fff"/></g>`;
+  }
+  g.innerHTML=s;
+  g.setAttribute("transform",`translate(${mapView.x},${mapView.y}) scale(${mapView.k})`);
+  g.querySelectorAll("[data-r]").forEach(el=>{
+    el.onclick=e=>{ e.stopPropagation(); mapSel=el.dataset.r; buildMap(); mapInfo(); };
+  });
+}
+function mapInfo(){
+  const isSite=!!SITEPOS[mapSel];
+  const parent=isSite?SITES.find(s=>s[0]===mapSel):null;
+  const blocked=(BLOCKED[mapSel]||[]).map(c=>HABS.find(x=>x[0]===c)[1]);
+  const p=deliverable(cfg.hab,cfg.month,mapSel,cfg.gamma,cfg.wx);
+  document.getElementById("mapsel").innerHTML=
+    `<b>${RNAME[mapSel]}</b>${isSite?` <span class="sub">— named site in ${RNAME[parent[2]]}</span>`:""}
+     <div class="sub" style="margin-top:4px">${p.length} species findable here in
+     ${HABS.find(x=>x[0]===cfg.hab)[1]}, ${MONTHS[cfg.month]}${
+     p.length?` · jackpot 1 in ${jackOdds(p)}`:""}</div>
+     ${blocked.length?`<div class="sub" style="color:var(--coral)">No ${blocked.join(" or ")} here</div>`:""}`;
+}
+function mapZoom(f,cx,cy){
+  const wrap=document.getElementById("mapwrap"); const r=wrap.getBoundingClientRect();
+  cx=cx===undefined?r.width/2:cx; cy=cy===undefined?r.height/2:cy;
+  const k2=Math.max(1,Math.min(6,mapView.k*f)), s=k2/mapView.k;
+  mapView.x=cx-(cx-mapView.x)*s; mapView.y=cy-(cy-mapView.y)*s; mapView.k=k2;
+  if(mapView.k===1){mapView.x=0;mapView.y=0;}
+  buildMap();
+}
+function initMap(){
+  const svg=document.getElementById("mapsvg"); if(!svg||svg.dataset.on) return;
+  svg.dataset.on=1;
+  let drag=null, pinch=null;
+  svg.addEventListener("pointerdown",e=>{
+    drag={x:e.clientX-mapView.x,y:e.clientY-mapView.y,moved:0};
+    svg.classList.add("drag"); svg.setPointerCapture(e.pointerId);
+  });
+  svg.addEventListener("pointermove",e=>{
+    if(!drag||pinch) return;
+    const nx=e.clientX-drag.x, ny=e.clientY-drag.y;
+    drag.moved+=Math.abs(nx-mapView.x)+Math.abs(ny-mapView.y);
+    mapView.x=nx; mapView.y=ny;
+    document.getElementById("mapg").setAttribute("transform",
+      `translate(${mapView.x},${mapView.y}) scale(${mapView.k})`);
+  });
+  svg.addEventListener("pointerup",()=>{svg.classList.remove("drag");drag=null;});
+  svg.addEventListener("pointercancel",()=>{svg.classList.remove("drag");drag=null;});
+  svg.addEventListener("wheel",e=>{e.preventDefault();
+    const r=svg.getBoundingClientRect();
+    mapZoom(e.deltaY<0?1.15:1/1.15,e.clientX-r.left,e.clientY-r.top);},{passive:false});
+  // two-finger pinch
+  let d0=0;
+  svg.addEventListener("touchstart",e=>{ if(e.touches.length===2){
+    pinch=1; d0=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,
+                           e.touches[0].clientY-e.touches[1].clientY); }},{passive:true});
+  svg.addEventListener("touchmove",e=>{ if(e.touches.length===2&&d0){
+    e.preventDefault();
+    const d=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,
+                       e.touches[0].clientY-e.touches[1].clientY);
+    const r=svg.getBoundingClientRect();
+    mapZoom(d/d0,(e.touches[0].clientX+e.touches[1].clientX)/2-r.left,
+                 (e.touches[0].clientY+e.touches[1].clientY)/2-r.top);
+    d0=d; }},{passive:false});
+  svg.addEventListener("touchend",()=>{pinch=null;d0=0;});
+  document.getElementById("mZoomIn").onclick =()=>mapZoom(1.4);
+  document.getElementById("mZoomOut").onclick=()=>mapZoom(1/1.4);
+  document.getElementById("mReset").onclick  =()=>{mapView={k:1,x:0,y:0};buildMap();};
+  document.getElementById("mUse").onclick    =()=>{
+    cfg.region=mapSel; renderSettings(); sync(); mapInfo();
+    $("#tally").textContent="Area set to "+RNAME[mapSel];
+    $$("nav button").forEach(x=>x.classList.remove("on"));
+    document.querySelector('nav button[data-v="scan"]').classList.add("on");
+    $$(".view").forEach(v=>v.classList.remove("on")); $("#v-scan").classList.add("on");
+  };
+}
+
 /* ---------- nav ---------- */
 $$("nav button").forEach(b=>b.onclick=()=>{
   $$("nav button").forEach(x=>x.classList.remove("on")); b.classList.add("on");
   $$(".view").forEach(v=>v.classList.remove("on"));
   $("#v-"+b.dataset.v).classList.add("on");
   if(b.dataset.v==="log") renderLog();
+  if(b.dataset.v==="map"){ mapSel=cfg.region; initMap(); buildMap(); mapInfo(); }
 });
 
 /* ---------- boot ---------- */
