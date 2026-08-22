@@ -192,7 +192,7 @@ h3:first-of-type{border-top:none;padding-top:0;margin-top:4px}
 .blip.unknown .mystery svg{width:64%;height:64%;opacity:.5}
 .blip.unknown .mystery::after{content:"";position:absolute;inset:0;
   background:linear-gradient(115deg,transparent 40%,rgba(255,255,255,.22) 50%,transparent 60%);
-  background-size:250% 100%;animation:mysh 2.6s ease-in-out infinite}
+  background-size:250% 100%;animation:mysh 3.4s ease-in-out infinite}
 @keyframes mysh{0%{background-position:130% 0}100%{background-position:-40% 0}}
 .blip.unknown[data-t="A"] .mystery,
 .blip.unknown[data-t="X"] .mystery{border-color:rgba(255,255,255,.4)}
@@ -212,31 +212,33 @@ h3:first-of-type{border-top:none;padding-top:0;margin-top:4px}
   100%{transform:scale(1) rotateY(0);opacity:1}}
 .reveal .slab .glow{position:absolute;inset:-40%;
   background:conic-gradient(from 0deg,transparent,var(--rc,#7fc4a0),transparent 42%);
-  animation:spin 1.5s linear infinite;opacity:.55}
+  animation:spin 3s linear infinite;opacity:.55}
 .reveal .slab .core{position:absolute;inset:2px;border-radius:13px;
   background:radial-gradient(circle at 50% 38%, color-mix(in srgb, var(--rc) 22%, #0b1710), #070f0b 72%);
   display:flex;align-items:center;justify-content:center}
 .reveal .slab .core svg{width:62%;opacity:.42;filter:grayscale(1)}
 .reveal .slab .shimmer{position:absolute;inset:0;
   background:linear-gradient(105deg,transparent 42%,rgba(255,255,255,.5) 50%,transparent 58%);
-  background-size:230% 100%;animation:sw 1.15s ease-in-out infinite}
+  background-size:230% 100%;animation:sw 2.3s ease-in-out infinite}
 .reveal .word{margin-top:20px;font-size:12px;letter-spacing:2.6px;text-transform:uppercase;
-  color:var(--rc,#7fc4a0);opacity:0;animation:fadeUp 500ms ease 260ms forwards}
+  color:var(--rc,#7fc4a0);opacity:0;animation:fadeUp 1000ms ease 520ms forwards}
 @keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:.9;transform:none}}
-.reveal.bang .slab{animation:slabBang 460ms cubic-bezier(.2,1.6,.4,1) forwards}
+.reveal.bang .slab{animation:slabBang 920ms cubic-bezier(.2,1.6,.4,1) forwards}
 @keyframes slabBang{0%{transform:scale(1)}38%{transform:scale(1.5)}100%{transform:scale(2.4);opacity:0}}
-.reveal.bang .word{animation:none;opacity:0;transition:opacity .16s}
+.reveal.bang .word{animation:none;opacity:0;transition:opacity .3s}
 .flash{position:fixed;inset:0;z-index:92;background:#fff;opacity:0;pointer-events:none}
-.flash.on{animation:fl 420ms ease-out forwards}
+.flash.on{animation:fl 840ms ease-out forwards}
 @keyframes fl{0%{opacity:0}12%{opacity:.82}100%{opacity:0}}
 .found{position:fixed;left:0;right:0;top:50%;z-index:93;text-align:center;
   transform:translateY(-50%);pointer-events:none;opacity:0}
-.found.on{animation:foundIn 1.5s ease forwards}
-@keyframes foundIn{0%{opacity:0;transform:translateY(-50%) scale(.7)}
-  16%{opacity:1;transform:translateY(-50%) scale(1.06)}
-  26%{transform:translateY(-50%) scale(1)}
-  78%{opacity:1}100%{opacity:0}}
-.found b{display:block;font-size:26px;letter-spacing:.5px;
+.found.on{animation:foundIn 1.4s ease forwards}
+@keyframes foundIn{
+  0%{opacity:0;transform:translateY(-50%) scale(.72)}
+  14%{opacity:1;transform:translateY(-50%) scale(1.09)}
+  24%{transform:translateY(-50%) scale(1)}
+  46%{opacity:1;transform:translateY(-50%) scale(1)}
+  100%{opacity:0;transform:translateY(-190%) scale(.82)}}
+.found b{display:block;font-size:25px;letter-spacing:.5px;
   text-shadow:0 4px 22px rgba(0,0,0,.9),0 0 30px var(--rc,#7fc4a0)}
 .found span{display:block;font-size:11px;letter-spacing:3.4px;text-transform:uppercase;
   color:var(--rc,#7fc4a0);margin-bottom:5px}
@@ -354,7 +356,7 @@ nav button svg{width:21px;height:21px}
 <body>
 
 <header>
-  <div class="brand"><h1>BirdHunt</h1><span id="ver">v3.5</span></div>
+  <div class="brand"><h1>BirdHunt</h1><span id="ver">v3.6.1</span></div>
   <div class="ctx" id="ctx"></div>
 </header>
 
@@ -751,7 +753,11 @@ function collect(e,el){
    Length scales with tier — a Common is a beat, an Ancient is a moment.
    Tapping anywhere skips straight to the card.
    ========================================================================== */
-const REVEAL_MS = {C:700, U:900, R:1250, X:1650, A:2200};
+const REVEAL_MS = {C:1400, U:1800, R:2500, X:3300, A:4400};
+/* How long after the bang the card slides in. Short and fixed: the banner is
+   a fixed overlay ABOVE the modal, so it keeps playing over the card. Waiting
+   for the banner to finish first left a dead second of empty screen. */
+const CARD_IN_MS = 620;
 let revealTimers = [];
 function clearReveal(){
   revealTimers.forEach(clearTimeout); revealTimers = [];
@@ -798,9 +804,10 @@ function revealThen(sp, ev, done){
     fo.className = "found on"; fo.style.setProperty("--rc", tv);
     fo.innerHTML = `<span>${ev.shiny ? "Shiny · " : ""}${TIERS[sp.t][0]} found</span><b>${sp.n}</b>`;
     document.body.appendChild(fo);
-    revealTimers.push(setTimeout(()=>fl.remove(), 460));
-    revealTimers.push(setTimeout(()=>{ fo.remove(); finish(); }, 1450));
-    revealTimers.push(setTimeout(()=>{ wrap.remove(); hint.remove(); }, 520));
+    revealTimers.push(setTimeout(()=>fl.remove(), 880));
+    // card comes in while the banner is still on screen — no empty beat
+    revealTimers.push(setTimeout(()=>{ wrap.remove(); hint.remove(); finish(); }, CARD_IN_MS));
+    revealTimers.push(setTimeout(()=>fo.remove(), 1450));
   };
   revealTimers.push(setTimeout(bang, build));
   wrap.onclick = finish; hint.onclick = finish;
