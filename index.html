@@ -302,7 +302,7 @@ nav button svg{width:21px;height:21px}
 <body>
 
 <header>
-  <div class="brand"><h1>BirdHunt</h1><span id="ver">v3.3</span></div>
+  <div class="brand"><h1>BirdHunt</h1><span id="ver">v3.3.1</span></div>
   <div class="ctx" id="ctx"></div>
 </header>
 
@@ -646,7 +646,7 @@ function scan(){
     el.style.left=(12+Math.random()*76)+"%";
     el.style.top =(12+Math.random()*74)+"%";
     el.style.animationDelay=(i*90)+"ms";
-    const bk=artKey(e.sp,e.sex,cfg.month);
+    const bk=artFile(e.sp, variantFor(e.sp,e.sex,cfg.month).k);
     el.innerHTML=`<div class="ring"></div><div class="ring2"></div>`
       +(bk?`<img class="photo" src="art/${bk}-thumb.webp" alt="">`
           :birdSVG(e.sp,56,e.shiny))
@@ -833,7 +833,7 @@ function renderLog(){
       ${has?`<span class="cnt">${(()=>{const V=variantsOf(s);
               return V.length>1 ? Object.keys(r.v||{}).filter(k=>r.v[k]).length+"/"+V.length : r.c;})()}</span>`:''}
       ${pic
-          ? `<img class="photo" src="art/${artKey(s,null,cfg.month)}-thumb.webp" alt="">
+          ? `<img class="photo" src="art/${tileArt(s)}-thumb.webp" alt="">
              <em class="over">${s.n}</em>`
           : `${birdSVG(s,44,false)}<em>${s.n}</em>`}
       ${has?'<span class="fin"></span>':''}</div>`;
