@@ -42,15 +42,6 @@ main{flex:1 1 auto;overflow-y:auto;-webkit-overflow-scrolling:touch;position:rel
 .view{display:none;padding:10px 12px 16px}
 .view.on{display:block}
 
-/* A single generic bird shape. Deliberately says nothing about the species —
-   the whole point is that you do not know what you are tapping. */
-const SILHOUETTE = `<svg viewBox="0 0 260 190" xmlns="http://www.w3.org/2000/svg">
- <path d="M197 80 C201 68 197 54 185 49 C173 44 160 49 155 60 C150 69 144 74 134 79
-          C115 87 96 93 82 103 C70 112 66 122 74 130 C86 141 108 145 128 143
-          C150 141 169 131 181 115 C190 103 195 90 197 80 Z" fill="#cfe0d6"/>
- <path d="M100 97 C76 99 48 106 24 119 C22 124 26 130 32 133 C56 122 78 116 100 114 Z" fill="#cfe0d6"/>
- <path d="M192 64 C199 62 204 66 204 69 C202 73 195 74 191 72 Z" fill="#cfe0d6"/>
-</svg>`;
 
 /* ---------- scan ---------- */
 #field{
@@ -148,15 +139,6 @@ const SILHOUETTE = `<svg viewBox="0 0 260 190" xmlns="http://www.w3.org/2000/svg
 .searchbar .clr{position:absolute;right:6px;top:50%;transform:translateY(-50%);
   width:24px;height:24px;color:var(--dim);font-size:17px;line-height:24px;text-align:center}
 .noresult{grid-column:1/-1;text-align:center;color:var(--dim);font-size:12.5px;padding:26px 0}
-
-$("#logSearch").addEventListener("input",e=>{
-  logQ=e.target.value;
-  $("#logClear").style.display=logQ?"block":"none";
-  renderLog();
-});
-$("#logClear").onclick=()=>{
-  logQ=""; $("#logSearch").value=""; $("#logClear").style.display="none"; renderLog();
-};
 
 /* ---------- settings ---------- */
 .set{margin-bottom:14px}
@@ -371,7 +353,7 @@ nav button svg{width:21px;height:21px}
 <body>
 
 <header>
-  <div class="brand"><h1>BirdHunt</h1><span id="ver">v3.4</span></div>
+  <div class="brand"><h1>BirdHunt</h1><span id="ver">v3.4.2</span></div>
   <div class="ctx" id="ctx"></div>
 </header>
 
@@ -706,7 +688,6 @@ const SILHOUETTE = `<svg viewBox="0 0 260 190" xmlns="http://www.w3.org/2000/svg
  <path d="M192 64 C199 62 204 66 204 69 C202 73 195 74 191 72 Z" fill="#cfe0d6"/>
 </svg>`;
 
-/* ---------- scan ---------- */
 function scan(){
   const pool=currentPool();
   const field=$("#field");
@@ -1005,6 +986,15 @@ $("#logClear").onclick=()=>{
 };
 
 /* ---------- settings ---------- */
+$("#logSearch").addEventListener("input",e=>{
+  logQ=e.target.value;
+  $("#logClear").style.display=logQ?"block":"none";
+  renderLog();
+});
+$("#logClear").onclick=()=>{
+  logQ=""; $("#logSearch").value=""; $("#logClear").style.display="none"; renderLog();
+};
+
 function opts(el,arr,val){el.innerHTML=arr.map(([v,l])=>
   `<option value="${v}" ${v==val?"selected":""}>${l}</option>`).join("");}
 function renderSettings(){
