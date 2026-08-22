@@ -301,6 +301,57 @@ nav button svg{width:21px;height:21px}
 .blip img.photo{width:100%;height:100%;object-fit:cover;border-radius:50%;
   border:2px solid rgba(255,255,255,.6);box-shadow:0 3px 8px rgba(0,0,0,.6)}
 
+
+/* ---------- card v2: fits the screen, tier owns the frame ---------- */
+.deck-track > .card{display:flex;flex-direction:column;max-height:86vh;margin:0}
+.card{position:relative;border-width:2px}
+/* the frame is the TIER. finish is a ribbon, not the border. */
+.card.t-C{border-color:var(--t-C)} .card.t-U{border-color:var(--t-U)}
+.card.t-R{border-color:var(--t-R)} .card.t-X{border-color:var(--t-X)}
+.card.t-A{border-color:var(--t-A)}
+.card.t-R{box-shadow:0 0 18px rgba(155,127,212,.28)}
+.card.t-X{box-shadow:0 0 24px rgba(224,139,72,.32)}
+.card.t-A{box-shadow:0 0 42px rgba(226,114,91,.42), inset 0 0 30px rgba(226,114,91,.10)}
+/* Ancient gets a living frame */
+.card.t-A::before{content:"";position:absolute;inset:-2px;border-radius:18px;z-index:0;
+  background:conic-gradient(from 0deg,#e2725b,#f0a58e,#8c2f22,#e2725b);
+  animation:spin 7s linear infinite;opacity:.85}
+.card.t-A::after{content:"";position:absolute;inset:0;border-radius:16px;z-index:1;
+  background:var(--panel);pointer-events:none}
+.card.t-A > *{position:relative;z-index:2}
+.card.vlocked::before{animation:none;background:var(--line);opacity:1}
+
+.card .art{flex:0 0 auto;height:clamp(130px,30vh,240px)}
+.card .body{flex:1 1 auto;padding:0 13px 12px;min-height:0}
+
+/* tag bar sits BELOW the art, never over the bird */
+.tagbar{display:flex;gap:6px;align-items:center;padding:9px 13px 8px;flex-wrap:wrap}
+.tagbar .tierbadge{font-size:9.5px;padding:3px 9px}
+.tagbar .finribbon{margin-left:auto;font-size:9px;letter-spacing:1px;text-transform:uppercase;
+  padding:3px 9px;border-radius:99px;border:1px solid currentColor}
+.fr-Bronze{color:#c08653} .fr-Silver{color:#c8d2da}
+.fr-Gold{color:var(--gold)} .fr-Platinum{color:#e6f0f5}
+
+.namerow{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}
+.card h2{font-size:20px;margin:0;letter-spacing:-.2px}
+.card .sci{font-size:11.5px;margin:1px 0 9px}
+
+/* six compact facts, all about the BIRD */
+.facts{display:grid;grid-template-columns:1fr 1fr 1fr;gap:5px;margin-bottom:9px}
+.facts div{background:rgba(0,0,0,.32);border-radius:7px;padding:5px 7px;min-width:0}
+.facts b{display:block;font-size:7.5px;color:var(--dim);text-transform:uppercase;
+  letter-spacing:.7px;margin-bottom:1px}
+.facts span{font-size:11.5px;display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.oddsline{display:flex;justify-content:space-between;align-items:baseline;gap:8px;
+  font-size:11px;color:var(--dim);margin-bottom:5px}
+.oddsline b{font-size:13px;font-weight:700}
+.card .months{margin:2px 0 2px}
+.card .months i{height:13px}
+.card .mlabels{font-size:6.5px}
+.tally{display:flex;gap:6px;margin-top:8px;font-size:10.5px;color:var(--dim)}
+.tally span{background:rgba(0,0,0,.3);border-radius:6px;padding:3px 8px}
+.tally b{color:var(--text)}
+
 /* ---------- card modal ---------- */
 #modal{position:fixed;inset:0;z-index:60;display:none;align-items:center;justify-content:center;
   background:rgba(4,10,7,.86);backdrop-filter:blur(6px);padding:18px}
@@ -336,10 +387,10 @@ nav button svg{width:21px;height:21px}
 .holo{position:absolute;inset:0;z-index:3;pointer-events:none;mix-blend-mode:color-dodge;opacity:.5;
   background:conic-gradient(from 0deg,#f0f,#0ff,#ff0,#0f0,#f0f);animation:spin 4s linear infinite}
 @keyframes spin{to{transform:rotate(360deg) scale(1.6)}}
-.fin-Bronze{border-color:#9c6b3f!important}
-.fin-Silver{border-color:#b9c4cc!important}
-.fin-Gold{border-color:var(--gold)!important;box-shadow:0 0 22px rgba(217,164,65,.3)}
-.fin-Platinum{border-color:#e6f0f5!important;box-shadow:0 0 30px rgba(230,240,245,.4)}
+
+
+
+
 .sweep{position:absolute;inset:0;z-index:4;pointer-events:none;
   background:linear-gradient(105deg,transparent 38%,rgba(255,255,255,.16) 48%,transparent 58%);
   background-size:250% 100%;animation:sw 3.2s ease-in-out infinite}
@@ -356,7 +407,7 @@ nav button svg{width:21px;height:21px}
 <body>
 
 <header>
-  <div class="brand"><h1>BirdHunt</h1><span id="ver">v3.6.1</span></div>
+  <div class="brand"><h1>BirdHunt</h1><span id="ver">v3.7.1</span></div>
   <div class="ctx" id="ctx"></div>
 </header>
 
@@ -864,19 +915,49 @@ function syncDeck(sp, vs, got){
 
 function oneCard(sp, v, count, ev, isCurrent){
   const t = sp.t;
-  const tv = getComputedStyle(document.documentElement).getPropertyValue(TIERS[t][1]).trim();
-  const r  = col[sp.i] || {c:0,M:0,F:0,sh:0,v:{}};
-  const fin = finishOf(sp) || "Bronze";
+  const tv = getComputedStyle(document.documentElement)
+              .getPropertyValue(TIERS[t][1]).trim();
+  const r   = col[sp.i] || {c:0,M:0,F:0,sh:0,v:{}};
+  const fin = finishOf(sp) || null;
   const od  = oddsFor(sp);
   const has = count > 0;
   const file = v.art;
-  const artH  = {C:150,U:175,R:195,X:215,A:235}[t];
-  const artSz = {C:88, U:112,R:150,X:176,A:196}[t];
+  const vs = variantsOf(sp);
+  const gotForms = vs.filter(x => (r.v||{})[x.k]).length;
+
+  // ---- facts about the BIRD, not about this card ------------------------
+  const habs = Object.entries(sp.h).sort((a,b)=>b[1]-a[1]);
+  const topHab = habs.length ? HABS.find(x=>x[0]===habs[0][0])[1] : "—";
+  const monthsOn = sp.m.split("").map((w,i)=>w!=="0"?i:-1).filter(i=>i>=0);
+  /* Month spans wrap: [Dec,Jan,Feb,Mar] must read "Dec–Mar", not "Jan–Dec".
+     Find the gap in the sorted set and start from just after it. */
+  const span = (arr) => {
+    const a = [...new Set(arr)].sort((x,y)=>x-y);
+    if(!a.length) return "—";
+    if(a.length === 12) return "All year";
+    if(a.length === 1) return MONTHS[a[0]].slice(0,3);
+    let start = 0;
+    for(let i=0;i<a.length;i++){
+      const prev = a[(i-1+a.length)%a.length];
+      if(((a[i]-prev+12)%12) !== 1){ start = i; break; }
+    }
+    const first = a[start], last = a[(start-1+a.length)%a.length];
+    return MONTHS[first].slice(0,3)+"–"+MONTHS[last].slice(0,3);
+  };
+  const vMonths = v.months ? v.months : monthsOn;
+  /* Plumage names the form; Window says when you can get it. Keeping them
+     distinct stops a sex variant reading "Male / Male". */
+  const plumage = v.label ? v.label.split("·")[0].trim() : "Standard";
+  const windowOf = span(vMonths);
+
+  const artH = {C:"clamp(120px,24vh,200px)",U:"clamp(128px,26vh,215px)",
+                R:"clamp(134px,28vh,225px)",X:"clamp(140px,29vh,235px)",
+                A:"clamp(146px,31vh,250px)"}[t];
+
   let bgfx = "";
-  if(t==="U") bgfx=`<div class="bgfx" style="background:radial-gradient(circle at 50% 60%,${tv}22,transparent 70%)"></div>`;
-  if(t==="R") bgfx=`<div class="bgfx" style="background:linear-gradient(160deg,${tv}30,#0e1a15)"></div>`;
-  if(t==="X") bgfx=`<div class="bgfx" style="background:radial-gradient(circle at 50% 40%,${tv}44,#0e1a15 72%)"></div>`;
-  if(t==="A") bgfx=`<div class="bgfx" style="background:radial-gradient(circle at 50% 42%,${tv}55,#1a0f0d 68%,#0e1a15)"></div>`;
+  if(t==="R") bgfx=`<div class="bgfx" style="background:linear-gradient(160deg,${tv}26,#0e1a15)"></div>`;
+  if(t==="X") bgfx=`<div class="bgfx" style="background:radial-gradient(circle at 50% 40%,${tv}3a,#0e1a15 74%)"></div>`;
+  if(t==="A") bgfx=`<div class="bgfx" style="background:radial-gradient(circle at 50% 40%,${tv}4a,#160d0c 70%,#0e1a15)"></div>`;
 
   const months = sp.m.split("").map((w,i)=>{
     const inV = !v.months || v.months.indexOf(i) >= 0;
@@ -884,36 +965,54 @@ function oneCard(sp, v, count, ev, isCurrent){
   }).join("");
 
   return `
-  <div class="card fin-${has?fin:"none"} ${has?"":"vlocked"}">
-    <div class="art" style="height:${artH}px">${bgfx}
+  <div class="card t-${t} ${has?"":"vlocked"}">
+    <div class="art" style="height:${artH}">${bgfx}
       ${file ? `<img class="photo${v.plate?" plate":""}" src="art/${file}.webp" alt="${sp.n}">
                 <div class="vig"></div><div class="fade"></div>`
-             : birdSVG(sp, artSz, has && ev.shiny && isCurrent)}
+             : birdSVG(sp, 150, has && ev.shiny && isCurrent)}
       ${has && ev.shiny && isCurrent ? '<div class="holo"></div>' : ''}
       ${"RXA".includes(t) && has ? '<div class="sweep"></div>' : ''}
       ${has ? "" : `<div class="vlock-msg"><b>Not yet found</b>${
-          v.months ? "Findable "+v.months.map(m=>MON3[m]).join(" ") : "Keep looking"}</div>`}
-      <div class="tag" style="position:absolute;top:9px;left:11px;z-index:9;display:flex;gap:5px">
-        <span class="tierbadge" style="background:${tv}">${TIERS[t][0]}</span>
-        ${v.label?`<span class="tierbadge" style="background:#8fb8d6">${v.label}</span>`:""}
-      </div>
+          v.months ? "Look "+span(vMonths) : "Keep looking"}</div>`}
     </div>
+
+    <div class="tagbar">
+      <span class="tierbadge" style="background:${tv}">${TIERS[t][0]}</span>
+      ${v.label?`<span class="tierbadge" style="background:#25415a;color:#cfe4f2">${v.label}</span>`:""}
+      ${ev.shiny&&isCurrent?`<span class="tierbadge" style="background:linear-gradient(90deg,#f0f,#0ff)">Shiny</span>`:""}
+      ${fin&&has?`<span class="finribbon fr-${fin}">${fin}</span>`:""}
+    </div>
+
     <div class="body">
-      <h2>${sp.n}</h2>
+      <div class="namerow"><h2>${sp.n}</h2></div>
       <div class="sci">${sp.s}</div>
-      <div class="meta">
-        <div><b>This form</b><span>${count||0} caught</span></div>
-        <div><b>All forms</b><span>${r.c||0} caught</span></div>
+
+      <div class="facts">
+        <div><b>Plumage</b><span>${plumage}</span></div>
+        <div><b>Window</b><span>${windowOf}</span></div>
+        <div><b>Forms</b><span>${gotForms}/${vs.length}</span></div>
+        <div><b>Habitat</b><span>${topHab}</span></div>
+        <div><b>Family</b><span>${sp.f.replace(/idae$/,"idae")}</span></div>
         <div><b>Status</b><span>${sp.b}</span></div>
-        <div><b>Finish</b><span>${r.c?fin:"—"}</span></div>
       </div>
-      <div style="font-size:11px;color:var(--dim)">Odds here — ${HABS.find(x=>x[0]===cfg.hab)[1]}, ${MONTHS[cfg.month]}, ${RNAME[cfg.region]||cfg.region}</div>
-      <div style="font-size:12.5px;color:${od?tv:"var(--dim)"};margin-bottom:8px">${
-        od ? "1 in "+od.n.toLocaleString() : "Not findable in this context"}</div>
-      <div style="font-size:11px;color:var(--dim)">${v.months?"This form appears":"When"}</div>
+
+      <div class="oddsline">
+        <span>${HABS.find(x=>x[0]===cfg.hab)[1]}, ${MONTHS[cfg.month].slice(0,3)}, ${(RNAME[cfg.region]||cfg.region)}</span>
+        <b style="color:${od?tv:"var(--dim)"}">${od?"1 in "+od.n.toLocaleString():"absent"}</b>
+      </div>
+
+      <div style="font-size:9.5px;color:var(--dim);letter-spacing:.6px;text-transform:uppercase">
+        ${v.months?"This form appears":"Findable"}</div>
       <div class="months">${months}</div>
       <div class="mlabels">${MON3.map(m=>`<span>${m}</span>`).join("")}</div>
-      ${file?"":`<div style="font-size:10px;color:#5d7568;margin-top:9px">Artwork still to source for this form.</div>`}
+
+      <div class="tally">
+        <span>This form <b>${count||0}</b></span>
+        <span>All forms <b>${r.c||0}</b></span>
+        ${r.sh?`<span>Shiny <b>${r.sh}</b></span>`:""}
+        <span style="margin-left:auto;color:#5d7568">${sp.L}</span>
+      </div>
+      ${file?"":`<div style="font-size:9px;color:#4d6459;margin-top:6px">Artwork still to source</div>`}
     </div>
   </div>`;
 }
