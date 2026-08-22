@@ -6,7 +6,7 @@
    itself updates. Network-first on the shell means a deploy lands as soon as
    the device is online, and the cache is only used as an offline fallback.  */
 
-const CACHE = "birdhunt-v3.0.0";
+const CACHE = "birdhunt-v3.1.0";
 const SHELL = ["./", "./index.html", "./manifest.webmanifest"];
 
 self.addEventListener("install", e => {
@@ -49,6 +49,10 @@ self.addEventListener("fetch", e => {
     );
     return;
   }
+
+  // Art is cached ON FIRST USE, never precached. 262 species of photographs
+  // would be a huge first load; this way you only ever store the birds you
+  // have actually seen, and they stay available offline afterwards.
 
   // Everything else: cache first, it never changes without a filename change.
   e.respondWith(

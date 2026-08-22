@@ -204,6 +204,21 @@ nav button svg{width:21px;height:21px}
 .maplegend{display:flex;gap:14px;font-size:10.5px;color:var(--dim);margin-top:8px;flex-wrap:wrap}
 .maplegend i{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:4px;
   vertical-align:-1px}
+
+/* ---------- photographic art ---------- */
+.art img.photo{width:100%;height:100%;object-fit:cover;display:block;position:absolute;inset:0;z-index:2}
+.art img.photo.plate{object-fit:contain;background:#e9e4d7}
+.art .vig{position:absolute;inset:0;z-index:3;pointer-events:none;
+  background:radial-gradient(ellipse 80% 74% at 50% 42%,transparent 38%,rgba(8,16,12,.74) 100%)}
+.art .fade{position:absolute;left:0;right:0;bottom:0;height:42%;z-index:3;pointer-events:none;
+  background:linear-gradient(180deg,transparent,rgba(24,44,35,.95))}
+.tile img.photo{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.tile.locked img.photo{filter:grayscale(1) brightness(.55)}
+.tile em.over{position:absolute;left:0;right:0;bottom:4px;background:rgba(8,16,12,.82);
+  padding:1px 2px;font-size:8px;z-index:2}
+.blip img.photo{width:100%;height:100%;object-fit:cover;border-radius:50%;
+  border:2px solid rgba(255,255,255,.6);box-shadow:0 3px 8px rgba(0,0,0,.6)}
+
 /* ---------- card modal ---------- */
 #modal{position:fixed;inset:0;z-index:60;display:none;align-items:center;justify-content:center;
   background:rgba(4,10,7,.86);backdrop-filter:blur(6px);padding:18px}
@@ -259,7 +274,7 @@ nav button svg{width:21px;height:21px}
 <body>
 
 <header>
-  <div class="brand"><h1>BirdHunt</h1><span id="ver">v3.0</span></div>
+  <div class="brand"><h1>BirdHunt</h1><span id="ver">v3.1</span></div>
   <div class="ctx" id="ctx"></div>
 </header>
 
@@ -433,6 +448,36 @@ function rollOne(pool){
 }
 function currentPool(){return deliverable(cfg.hab,cfg.month,cfg.region,cfg.gamma,cfg.wx);}
 
+
+/* ==========================================================================
+   REAL ART
+   Files live in /art. A species falls back to the procedural SVG when it has
+   no photo yet, so the app works at any point during the sourcing pass.
+   Variant keys resolve in this order: season, then sex, then default.
+   ========================================================================== */
+const ART = {
+  "Mallard":            {male:"mallard-male", female:"mallard-female"},
+  "Chough":             {def:"chough"},
+  "Capercaillie":       {male:"capercaillie-male"},
+  "Spotted Flycatcher": {def:"spotted-flycatcher", plate:true},
+  "Ptarmigan":          {season:{"11,0,1,2":"ptarmigan-winter", "8,9,10":"ptarmigan-summer"}}
+};
+function artKey(sp, sex, month){
+  const a = ART[sp.n]; if(!a) return null;
+  if(a.season){
+    for(const k in a.season){ if(k.split(",").map(Number).includes(month)) return a.season[k]; }
+  }
+  if(sex==="Male"   && a.male)   return a.male;
+  if(sex==="Female" && a.female) return a.female;
+  // If the species is keyed by sex and we asked for one we do not have, fall
+  // back to the drawing rather than showing the wrong sex. A female
+  // Capercaillie is brown and half the size of the male - showing his photo
+  // on her card would be worse than showing no photo at all.
+  if(sex && (a.male || a.female)) return null;
+  return a.def || a.male || a.female || null;
+}
+function hasArt(sp){ return !!ART[sp.n] && !!artKey(sp,null,cfg.month); }
+
 /* ---------- collection helpers ---------- */
 function rec(id){return col[id]||(col[id]={c:0,M:0,F:0,sh:0,t:0});}
 function finishOf(sp){
@@ -547,8 +592,11 @@ function scan(){
     el.style.left=(12+Math.random()*76)+"%";
     el.style.top =(12+Math.random()*74)+"%";
     el.style.animationDelay=(i*90)+"ms";
+    const bk=artKey(e.sp,e.sex,cfg.month);
     el.innerHTML=`<div class="ring"></div><div class="ring2"></div>`
-      +birdSVG(e.sp,56,e.shiny)+`<div class="tierdot"></div>`;
+      +(bk?`<img class="photo" src="art/${bk}-thumb.webp" alt="">`
+          :birdSVG(e.sp,56,e.shiny))
+      +`<div class="tierdot"></div>`;
     el.onclick=()=>collect(e,el);
     field.appendChild(el);
   }
@@ -574,6 +622,7 @@ function showCard(sp,ev){
   const fin=finishOf(sp)||"Bronze";
   const r=col[sp.i]||{c:0,M:0,F:0,sh:0};
   const od=oddsFor(sp);
+  const ak=artKey(sp, ev.sex, cfg.month);
   // rarity-driven art treatment
   const artH  = {C:120,U:145,R:180,X:205,A:225}[t];
   const artSz = {C:88, U:112,R:150,X:176,A:196}[t];
@@ -614,8 +663,10 @@ function showCard(sp,ev){
     <button class="closeX" onclick="closeCard()">×</button>
     ${ev.isNew?'<span class="newtag">NEW</span>':''}
     <div class="art" style="height:${artH}px">${bgfx}
-      ${ev.shiny?'<div class="holo"></div>':''}
-      ${birdSVG(sp,artSz,ev.shiny)}</div>
+      ${ak ? `<img class="photo${ART[sp.n]&&ART[sp.n].plate?" plate":""}" src="art/${ak}.webp" alt="${sp.n}">
+             <div class="vig"></div><div class="fade"></div>`
+           : birdSVG(sp,artSz,ev.shiny)}
+      ${ev.shiny?'<div class="holo"></div>':''}</div>
     <div class="body">
       <span class="tierbadge" style="background:${tv}">${TIERS[t][0]}</span>
       ${ev.shiny?'<span class="tierbadge" style="background:linear-gradient(90deg,#f0f,#0ff);margin-left:5px">Shiny</span>':''}
@@ -701,7 +752,10 @@ function renderLog(){
     out+=`<div class="tile ${has?"":"locked"}" data-t="${s.t}" data-fin="${fin}" data-i="${s.i}">
       ${has&&r.sh?'<span class="sh">✦</span>':''}
       ${has?`<span class="cnt">${r.c}</span>`:''}
-      ${birdSVG(s,44,false)}<em>${s.n}</em>
+      ${hasArt(s)
+          ? `<img class="photo" src="art/${artKey(s,null,cfg.month)}-thumb.webp" alt="">
+             <em class="over">${s.n}</em>`
+          : `${birdSVG(s,44,false)}<em>${s.n}</em>`}
       ${has?'<span class="fin"></span>':''}</div>`;
   }
   $("#grid").innerHTML=out;
