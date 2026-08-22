@@ -167,6 +167,30 @@ h3:first-of-type{border-top:none;padding-top:0;margin-top:4px}
 
 
 
+
+/* ---------- variant deck ---------- */
+#modal.deck{align-items:center}
+.deck-wrap{width:100%;max-width:330px;position:relative}
+.deck-track{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;gap:12px;
+  scrollbar-width:none;-webkit-overflow-scrolling:touch;padding-bottom:2px}
+.deck-track::-webkit-scrollbar{display:none}
+.deck-track > .card{flex:0 0 100%;scroll-snap-align:center;margin:0}
+.deck-dots{display:flex;gap:6px;justify-content:center;margin-top:11px}
+.deck-dots i{width:7px;height:7px;border-radius:50%;background:#3d5a4b;transition:.2s}
+.deck-dots i.on{background:var(--accent);width:20px;border-radius:99px}
+.deck-dots i.locked{background:#2b4a3b}
+.deck-nav{position:absolute;top:44%;width:34px;height:34px;border-radius:50%;
+  background:rgba(8,16,12,.72);border:1px solid var(--line);color:#fff;font-size:17px;
+  line-height:32px;text-align:center;z-index:20}
+.deck-nav.prev{left:-10px} .deck-nav.next{right:-10px}
+.deck-nav[disabled]{opacity:.25}
+.deck-count{text-align:center;font-size:11px;color:var(--dim);margin-top:7px}
+.card.vlocked .art{filter:grayscale(1) brightness(.45)}
+.card.vlocked{border-color:var(--line)!important;box-shadow:none!important}
+.vlock-msg{position:absolute;top:50%;left:0;right:0;transform:translateY(-50%);z-index:8;
+  text-align:center;font-size:12px;color:#cfe0d6;text-shadow:0 2px 8px #000;padding:0 22px;line-height:1.5}
+.vlock-msg b{display:block;font-size:15px;margin-bottom:3px}
+
 /* ---------- nav ---------- */
 nav{flex:0 0 auto;display:grid;grid-template-columns:repeat(4,1fr);
   border-top:1px solid var(--line);background:var(--bg2)}
@@ -278,7 +302,7 @@ nav button svg{width:21px;height:21px}
 <body>
 
 <header>
-  <div class="brand"><h1>BirdHunt</h1><span id="ver">v3.2</span></div>
+  <div class="brand"><h1>BirdHunt</h1><span id="ver">v3.3</span></div>
   <div class="ctx" id="ctx"></div>
 </header>
 
@@ -460,30 +484,56 @@ function currentPool(){return deliverable(cfg.hab,cfg.month,cfg.region,cfg.gamma
    Variant keys resolve in this order: season, then sex, then default.
    ========================================================================== */
 const ART = {
-  "Mallard":            {male:"mallard-male", female:"mallard-female"},
-  "Chough":             {def:"chough"},
-  "Capercaillie":       {male:"capercaillie-male"},
-  "Spotted Flycatcher": {def:"spotted-flycatcher", plate:true},
-  "Ptarmigan":          {season:{"11,0,1,2":"ptarmigan-winter", "8,9,10":"ptarmigan-summer"}}
+  "Mallard": {variants:[
+    {k:"male",   label:"Male",   sex:"Male",   art:"mallard-male"},
+    {k:"female", label:"Female", sex:"Female", art:"mallard-female"}]},
+  "Capercaillie": {variants:[
+    {k:"male",   label:"Male",   sex:"Male",   art:"capercaillie-male"},
+    {k:"female", label:"Female", sex:"Female", art:null}]},
+  "Ptarmigan": {variants:[
+    {k:"winter", label:"White · winter",   months:[11,0,1,2], art:"ptarmigan-winter"},
+    {k:"spring", label:"Transitional",     months:[3,4],      art:null},
+    {k:"summer", label:"Grey · summer",    months:[5,6,7],    art:null},
+    {k:"autumn", label:"Mottled · autumn", months:[8,9,10],   art:"ptarmigan-summer"}]},
+  "Chough":             {variants:[{k:"def", label:null, art:"chough"}]},
+  "Spotted Flycatcher": {variants:[{k:"def", label:null, art:"spotted-flycatcher", plate:true}]}
 };
-function artKey(sp, sex, month){
-  const a = ART[sp.n]; if(!a) return null;
-  if(a.season){
-    for(const k in a.season){ if(k.split(",").map(Number).includes(month)) return a.season[k]; }
-  }
-  if(sex==="Male"   && a.male)   return a.male;
-  if(sex==="Female" && a.female) return a.female;
-  // If the species is keyed by sex and we asked for one we do not have, fall
-  // back to the drawing rather than showing the wrong sex. A female
-  // Capercaillie is brown and half the size of the male - showing his photo
-  // on her card would be worse than showing no photo at all.
-  if(sex && (a.male || a.female)) return null;
-  return a.def || a.male || a.female || null;
+
+/* Every species has at least one variant. Dimorphic species without a bespoke
+   registry entry get male/female automatically, using the drawing for both. */
+function variantsOf(sp){
+  const a = ART[sp.n];
+  if(a && a.variants) return a.variants;
+  if(sp.x) return [{k:"male",label:"Male",sex:"Male",art:null},
+                   {k:"female",label:"Female",sex:"Female",art:null}];
+  return [{k:"def",label:null,art:null}];
 }
-function hasArt(sp){ return !!ART[sp.n] && !!artKey(sp,null,cfg.month); }
+/* Which variant does an encounter produce? Season first, then sex. */
+function variantFor(sp, sex, month){
+  const vs = variantsOf(sp);
+  let v = vs.find(x => x.months && x.months.indexOf(month) >= 0 && (!x.sex || x.sex === sex));
+  if(v) return v;
+  v = vs.find(x => x.sex && x.sex === sex);
+  if(v) return v;
+  return vs[0];
+}
+function artFile(sp, vk){
+  const v = variantsOf(sp).find(x => x.k === vk);
+  return v && v.art ? v.art : null;
+}
+/* For the log tile: the first variant that actually has a picture. */
+function tileArt(sp){
+  const v = variantsOf(sp).find(x => x.art);
+  return v ? v.art : null;
+}
+function hasArt(sp){ return !!tileArt(sp); }
 
 /* ---------- collection helpers ---------- */
-function rec(id){return col[id]||(col[id]={c:0,M:0,F:0,sh:0,t:0});}
+function rec(id){
+  const r = col[id] || (col[id] = {c:0,M:0,F:0,sh:0,t:0,v:{}});
+  if(!r.v) r.v = {};          // migrate collections saved before variants existed
+  return r;
+}
 function finishOf(sp){
   const r=col[sp.i]; if(!r||!r.c) return null;
   const f=FINISH[sp.t];
@@ -612,96 +662,120 @@ function collect(e,el){
   const isNew=r.c===0;
   r.c++; if(e.sex==="Male")r.M++; if(e.sex==="Female")r.F++;
   if(e.shiny)r.sh++; if(!r.t)r.t=Date.now();
+  const vk = variantFor(e.sp, e.sex, cfg.month).k;
+  r.v[vk] = (r.v[vk]||0) + 1;
+  e.vk = vk;
   save();
   const left=[...$("#field").querySelectorAll(".blip:not(.taken)")].length;
   $("#tally").textContent=left?`${left} still in range`:"Area cleared.";
-  showCard(e.sp,{isNew,shiny:e.shiny,sex:e.sex});
+  showCard(e.sp,{isNew,shiny:e.shiny,sex:e.sex,vk:e.vk});
   renderLog();
 }
 
 /* ---------- card ---------- */
 function showCard(sp,ev){
-  ev=ev||{};
-  const t=sp.t, tv=getComputedStyle(document.documentElement).getPropertyValue(TIERS[t][1]).trim();
-  const fin=finishOf(sp)||"Bronze";
-  const r=col[sp.i]||{c:0,M:0,F:0,sh:0};
-  const od=oddsFor(sp);
-  const ak=artKey(sp, ev.sex, cfg.month);
-  // rarity-driven art treatment
-  const artH  = {C:120,U:145,R:180,X:205,A:225}[t];
+  ev = ev || {};
+  const vs = variantsOf(sp);
+  const r  = col[sp.i] || {c:0,M:0,F:0,sh:0,v:{}};
+  const got = r.v || {};
+  // open on the variant just caught, else the first one collected, else the first
+  let idx = 0;
+  if(ev.vk) idx = Math.max(0, vs.findIndex(v => v.k === ev.vk));
+  else { const i = vs.findIndex(v => got[v.k]); if(i >= 0) idx = i; }
+
+  const cards = vs.map((v, i) => oneCard(sp, v, got[v.k] || 0, ev, i === idx)).join("");
+  const single = vs.length === 1;
+  $("#card").outerHTML =
+    `<div class="deck-wrap" id="card">
+       <button class="closeX" onclick="closeCard()" style="top:-2px;right:2px">×</button>
+       <div class="deck-track" id="deckTrack">${cards}</div>
+       ${single ? "" : `
+         <button class="deck-nav prev" id="dPrev">‹</button>
+         <button class="deck-nav next" id="dNext">›</button>
+         <div class="deck-dots" id="deckDots">${vs.map((v,i)=>
+           `<i class="${i===idx?"on":""} ${got[v.k]?"":"locked"}"></i>`).join("")}</div>
+         <div class="deck-count" id="deckCount"></div>`}
+     </div>`;
+  $("#modal").classList.add("on","deck");
+  const track = $("#deckTrack");
+  requestAnimationFrame(()=>{ track.scrollLeft = idx * track.clientWidth; syncDeck(sp, vs, got); });
+  if(!single){
+    track.onscroll = () => syncDeck(sp, vs, got);
+    $("#dPrev").onclick = () => track.scrollBy({left:-track.clientWidth, behavior:"smooth"});
+    $("#dNext").onclick = () => track.scrollBy({left: track.clientWidth, behavior:"smooth"});
+  }
+}
+function syncDeck(sp, vs, got){
+  const track = $("#deckTrack"); if(!track) return;
+  const i = Math.round(track.scrollLeft / track.clientWidth);
+  const dots = $("#deckDots");
+  if(dots) [...dots.children].forEach((d,j)=>d.classList.toggle("on", j===i));
+  const c = $("#deckCount");
+  if(c){
+    const n = vs.filter(v=>got[v.k]).length;
+    c.textContent = `${vs[i]?.label || "Standard"} — ${i+1} of ${vs.length}   ·   ${n}/${vs.length} collected`;
+  }
+  const p = $("#dPrev"), nx = $("#dNext");
+  if(p)  p.disabled  = i <= 0;
+  if(nx) nx.disabled = i >= vs.length - 1;
+}
+
+function oneCard(sp, v, count, ev, isCurrent){
+  const t = sp.t;
+  const tv = getComputedStyle(document.documentElement).getPropertyValue(TIERS[t][1]).trim();
+  const r  = col[sp.i] || {c:0,M:0,F:0,sh:0,v:{}};
+  const fin = finishOf(sp) || "Bronze";
+  const od  = oddsFor(sp);
+  const has = count > 0;
+  const file = v.art;
+  const artH  = {C:150,U:175,R:195,X:215,A:235}[t];
   const artSz = {C:88, U:112,R:150,X:176,A:196}[t];
-  let bgfx="";
+  let bgfx = "";
   if(t==="U") bgfx=`<div class="bgfx" style="background:radial-gradient(circle at 50% 60%,${tv}22,transparent 70%)"></div>`;
-  if(t==="R") bgfx=`<div class="bgfx" style="background:linear-gradient(160deg,${tv}30,#0e1a15)"></div><div class="sweep"></div>`;
-  if(t==="X") bgfx=`<div class="bgfx" style="background:radial-gradient(circle at 50% 40%,${tv}44,#0e1a15 72%)"></div>
-    <div class="bgfx" style="background:repeating-linear-gradient(115deg,transparent 0 14px,${tv}14 14px 28px)"></div><div class="sweep"></div>`;
-  if(t==="A") bgfx=`<div class="bgfx" style="background:radial-gradient(circle at 50% 42%,${tv}55,#1a0f0d 68%,#0e1a15)"></div>
-    <div class="bgfx" style="background:conic-gradient(from 200deg at 50% 50%,transparent,${tv}33,transparent 55%);animation:spin 9s linear infinite"></div>
-    <div class="sweep"></div>`;
+  if(t==="R") bgfx=`<div class="bgfx" style="background:linear-gradient(160deg,${tv}30,#0e1a15)"></div>`;
+  if(t==="X") bgfx=`<div class="bgfx" style="background:radial-gradient(circle at 50% 40%,${tv}44,#0e1a15 72%)"></div>`;
+  if(t==="A") bgfx=`<div class="bgfx" style="background:radial-gradient(circle at 50% 42%,${tv}55,#1a0f0d 68%,#0e1a15)"></div>`;
 
-  const months=sp.m.split("").map((w,i)=>`<i data-w="${w}" title="${MONTHS[i]}"></i>`).join("");
-  const habs=Object.entries(sp.h).sort((a,b)=>b[1]-a[1])
-    .map(([k,v])=>HABS.find(h=>h[0]===k)[1]+(v===3?"":v===2?" ·":" ·â€¯")).slice(0,4).join(", ");
+  const months = sp.m.split("").map((w,i)=>{
+    const inV = !v.months || v.months.indexOf(i) >= 0;
+    return `<i data-w="${inV?w:0}" title="${MONTHS[i]}"></i>`;
+  }).join("");
 
-  // variants
-  const nf=nextFinish(sp);
-  let vars=`<div class="vars">`;
-  for(const f of ["Bronze","Silver","Gold","Platinum"]){
-    const need=f==="Bronze"?1:FINISH[t][f];
-    const got=r.c>=need;
-    const cols={Bronze:"#9c6b3f",Silver:"#b9c4cc",Gold:"#d9a441",Platinum:"#e6f0f5"};
-    vars+=`<div class="vrow ${got?"got":"not"}"><span class="dot" style="background:${cols[f]};opacity:${got?1:.25}"></span>
-      <span style="flex:1">${f}</span><span style="color:var(--dim)">${got?"✓":r.c+" / "+need}</span></div>`;
-  }
-  if(sp.x){
-    vars+=`<div class="vrow ${r.M?"got":"not"}"><span class="dot" style="background:#5b91c4;opacity:${r.M?1:.25}"></span>
-      <span style="flex:1">Male</span><span style="color:var(--dim)">${r.M||"—"}</span></div>`;
-    vars+=`<div class="vrow ${r.F?"got":"not"}"><span class="dot" style="background:#c47f9b;opacity:${r.F?1:.25}"></span>
-      <span style="flex:1">Female</span><span style="color:var(--dim)">${r.F||"—"}</span></div>`;
-  }
-  vars+=`<div class="vrow ${r.sh?"got":"not"}"><span class="dot" style="background:linear-gradient(90deg,#f0f,#0ff,#ff0);opacity:${r.sh?1:.25}"></span>
-    <span style="flex:1">Shiny — aberrant plumage</span><span style="color:var(--dim)">${r.sh||"—"}</span></div></div>`;
-
-  $("#card").className="card fin-"+fin;
-  $("#card").innerHTML=`
-    <button class="closeX" onclick="closeCard()">×</button>
-    ${ev.isNew?'<span class="newtag">NEW</span>':''}
+  return `
+  <div class="card fin-${has?fin:"none"} ${has?"":"vlocked"}">
     <div class="art" style="height:${artH}px">${bgfx}
-      ${ak ? `<img class="photo${ART[sp.n]&&ART[sp.n].plate?" plate":""}" src="art/${ak}.webp" alt="${sp.n}">
-             <div class="vig"></div><div class="fade"></div>`
-           : birdSVG(sp,artSz,ev.shiny)}
-      ${ev.shiny?'<div class="holo"></div>':''}</div>
+      ${file ? `<img class="photo${v.plate?" plate":""}" src="art/${file}.webp" alt="${sp.n}">
+                <div class="vig"></div><div class="fade"></div>`
+             : birdSVG(sp, artSz, has && ev.shiny && isCurrent)}
+      ${has && ev.shiny && isCurrent ? '<div class="holo"></div>' : ''}
+      ${"RXA".includes(t) && has ? '<div class="sweep"></div>' : ''}
+      ${has ? "" : `<div class="vlock-msg"><b>Not yet found</b>${
+          v.months ? "Findable "+v.months.map(m=>MON3[m]).join(" ") : "Keep looking"}</div>`}
+      <div class="tag" style="position:absolute;top:9px;left:11px;z-index:9;display:flex;gap:5px">
+        <span class="tierbadge" style="background:${tv}">${TIERS[t][0]}</span>
+        ${v.label?`<span class="tierbadge" style="background:#8fb8d6">${v.label}</span>`:""}
+      </div>
+    </div>
     <div class="body">
-      <span class="tierbadge" style="background:${tv}">${TIERS[t][0]}</span>
-      ${ev.shiny?'<span class="tierbadge" style="background:linear-gradient(90deg,#f0f,#0ff);margin-left:5px">Shiny</span>':''}
-      ${ev.sex?`<span class="tierbadge" style="background:${ev.sex==="Male"?"#5b91c4":"#c47f9b"};margin-left:5px">${ev.sex}</span>`:''}
-      <h2 style="margin-top:8px">${sp.n}</h2>
+      <h2>${sp.n}</h2>
       <div class="sci">${sp.s}</div>
       <div class="meta">
-        <div><b>Family</b><span>${sp.f}</span></div>
+        <div><b>This form</b><span>${count||0} caught</span></div>
+        <div><b>All forms</b><span>${r.c||0} caught</span></div>
         <div><b>Status</b><span>${sp.b}</span></div>
-        <div><b>Seen</b><span>${r.c||0} time${r.c===1?"":"s"}</span></div>
-        <div style="grid-column:1/-1"><b>Odds here &mdash; ${HABS.find(x=>x[0]===cfg.hab)[1]}, ${MONTHS[cfg.month]}, ${RNAME[cfg.region]||cfg.region}</b>
-          <span style="color:${od?tv:"var(--dim)"};font-weight:${od?600:400}">${
-            od ? "1 in "+od.n.toLocaleString()+"  ("+(od.pct<0.1?od.pct.toFixed(3):od.pct.toFixed(1))+"% of encounters)"
-               : "Not findable in this context"}</span></div>
         <div><b>Finish</b><span>${r.c?fin:"—"}</span></div>
       </div>
-      <div style="font-size:11px;color:var(--dim);margin-bottom:3px">Habitat</div>
-      <div style="font-size:12.5px;margin-bottom:9px">${habs}</div>
-      <div style="font-size:11px;color:var(--dim)">Where</div>
-      <div style="font-size:12.5px;margin-bottom:9px">${sp.L}</div>
-      <div style="font-size:11px;color:var(--dim)">When</div>
+      <div style="font-size:11px;color:var(--dim)">Odds here — ${HABS.find(x=>x[0]===cfg.hab)[1]}, ${MONTHS[cfg.month]}, ${RNAME[cfg.region]||cfg.region}</div>
+      <div style="font-size:12.5px;color:${od?tv:"var(--dim)"};margin-bottom:8px">${
+        od ? "1 in "+od.n.toLocaleString() : "Not findable in this context"}</div>
+      <div style="font-size:11px;color:var(--dim)">${v.months?"This form appears":"When"}</div>
       <div class="months">${months}</div>
       <div class="mlabels">${MON3.map(m=>`<span>${m}</span>`).join("")}</div>
-      ${nf&&r.c?`<div style="font-size:11.5px;color:var(--dim);margin-top:10px">${nf[1]} more for ${nf[0]}</div>`:""}
-      ${vars}
-      <div style="font-size:10.5px;color:#5d7568;margin-top:12px;line-height:1.5">
-        Fun fact and full description are Phase 5 content. Art is procedural placeholder.</div>
-    </div>`;
-  $("#modal").classList.add("on");
+      ${file?"":`<div style="font-size:10px;color:#5d7568;margin-top:9px">Artwork still to source for this form.</div>`}
+    </div>
+  </div>`;
 }
-function closeCard(){$("#modal").classList.remove("on");}
+function closeCard(){$("#modal").classList.remove("on","deck");}
 $("#modal").onclick=e=>{if(e.target.id==="modal")closeCard();};
 
 /* ---------- log ---------- */
@@ -756,7 +830,8 @@ function renderLog(){
     const pic=hasArt(s);
     out+=`<div class="tile ${pic?"haspic ":""}${has?"":"locked"}" data-t="${s.t}" data-fin="${fin}" data-i="${s.i}">
       ${has&&r.sh?'<span class="sh">✦</span>':''}
-      ${has?`<span class="cnt">${r.c}</span>`:''}
+      ${has?`<span class="cnt">${(()=>{const V=variantsOf(s);
+              return V.length>1 ? Object.keys(r.v||{}).filter(k=>r.v[k]).length+"/"+V.length : r.c;})()}</span>`:''}
       ${pic
           ? `<img class="photo" src="art/${artKey(s,null,cfg.month)}-thumb.webp" alt="">
              <em class="over">${s.n}</em>`
