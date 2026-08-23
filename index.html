@@ -474,19 +474,12 @@ nav button svg{width:21px;height:21px}
 /* One shiny per SPECIES, not per form: once you have it, every card in that
    entry wears the treatment. The frame turns ice-blue and gains sparkles. */
 :root{--shiny1:#8fe0ff;--shiny2:#3aa9dd;--shiny3:#d9f4ff}
+/* Static frame — the sparkles are the only motion. */
 .card.shiny{background:linear-gradient(145deg,var(--shiny3),var(--shiny1) 28%,
   var(--shiny2) 58%,var(--shiny1) 82%,var(--shiny3))!important;
-  animation:shinyGlow 3.2s ease-in-out infinite!important}
-@keyframes shinyGlow{
-  0%,100%{box-shadow:0 0 26px rgba(143,224,255,.45), 0 0 70px rgba(58,169,221,.22)}
-  50%    {box-shadow:0 0 52px rgba(143,224,255,.78), 0 0 120px rgba(58,169,221,.42)}}
+  animation:none!important;
+  box-shadow:0 0 34px rgba(143,224,255,.55), 0 0 84px rgba(58,169,221,.28)!important}
 .card.shiny .tiertab{background:var(--shiny1)!important;color:#04212e!important}
-/* holographic wash over the artwork */
-.card.shiny .art::before{content:"";position:absolute;inset:0;z-index:5;pointer-events:none;
-  mix-blend-mode:color-dodge;opacity:.26;
-  background:conic-gradient(from 210deg,#0ff,#f0f,#ff0,#0f0,#0ff);
-  animation:holoSpin 7s linear infinite}
-@keyframes holoSpin{to{transform:rotate(360deg) scale(1.7)}}
 /* sparkles */
 .sparkles{position:absolute;inset:0;z-index:11;pointer-events:none;overflow:hidden}
 .sparkles i{position:absolute;width:var(--s,6px);height:var(--s,6px);
@@ -502,23 +495,6 @@ nav button svg{width:21px;height:21px}
   12%{opacity:1;transform:scale(1.15) rotate(35deg)}
   30%{opacity:.55;transform:scale(.85) rotate(80deg)}
   55%{opacity:0;transform:scale(.4) rotate(140deg)}}
-/* the second beat: it lands a second AFTER the card */
-.shinyword{position:fixed;left:0;right:0;top:24%;z-index:95;text-align:center;
-  pointer-events:none;opacity:0;animation:shinyIn 2.6s ease forwards}
-.shinyword b{display:block;font-size:23px;letter-spacing:.4px;color:#eafaff;
-  text-shadow:0 2px 16px rgba(0,0,0,.95),0 0 32px var(--shiny1),0 0 60px var(--shiny2)}
-.shinyword span{display:block;font-size:10.5px;letter-spacing:3.6px;text-transform:uppercase;
-  color:var(--shiny1);margin-bottom:5px;text-shadow:0 2px 10px rgba(0,0,0,.9)}
-@keyframes shinyIn{
-  0%{opacity:0;transform:translateY(14px) scale(.8)}
-  12%{opacity:1;transform:translateY(0) scale(1.06)}
-  20%{transform:scale(1)}
-  70%{opacity:1;transform:translateY(0) scale(1)}
-  100%{opacity:0;transform:translateY(-34px) scale(.92)}}
-.shinyflash{position:fixed;inset:0;z-index:94;pointer-events:none;opacity:0;
-  background:radial-gradient(circle at 50% 38%,rgba(200,245,255,.9),transparent 62%);
-  animation:shflash 900ms ease-out forwards}
-@keyframes shflash{0%{opacity:0}18%{opacity:.85}100%{opacity:0}}
 /* log tile */
 .tile.hasshiny{border-color:var(--shiny1)!important;
   box-shadow:0 0 10px rgba(143,224,255,.5)}
@@ -604,7 +580,7 @@ nav button svg{width:21px;height:21px}
 <body>
 
 <header>
-  <div class="brand"><h1>BirdHunt</h1><span id="ver">v3.21</span></div>
+  <div class="brand"><h1>BirdHunt</h1><span id="ver">v3.21.1</span></div>
   <div class="ctx" id="ctx"></div>
 </header>
 
@@ -892,8 +868,9 @@ function creditLine(file){
 
 /* ---------- collection helpers ---------- */
 function rec(id){
-  const r = col[id] || (col[id] = {c:0,M:0,F:0,sh:0,t:0,v:{}});
-  if(!r.v) r.v = {};          // migrate collections saved before variants existed
+  const r = col[id] || (col[id] = {c:0,M:0,F:0,sh:0,t:0,v:{},shv:{}});
+  if(!r.v)  r.v  = {};   // migrate collections saved before variants existed
+  if(!r.shv) r.shv = {}; // ...and before shinies were tracked per form
   return r;
 }
 function finishOf(sp){
@@ -1041,9 +1018,11 @@ function collect(e,el){
   const r=rec(e.sp.i);
   const isNew=r.c===0;
   r.c++; if(e.sex==="Male")r.M++; if(e.sex==="Female")r.F++;
-  // A shiny belongs to the SPECIES, not the form: one is enough for the entry.
-  if(e.shiny)r.sh++; if(!r.t)r.t=Date.now();
+  if(!r.t)r.t=Date.now();
   const vk = variantFor(e.sp, e.sex, cfg.month).k;
+  // A shiny belongs to the FORM, so a shiny drake and a shiny duck are two
+  // separate finds. r.sh stays as the species total.
+  if(e.shiny){ r.sh++; r.shv[vk] = (r.shv[vk]||0) + 1; }
   const firstOfForm = !(r.v[vk] > 0);
   r.v[vk] = (r.v[vk]||0) + 1;
   e.vk = vk; e.newForm = firstOfForm;
@@ -1179,22 +1158,13 @@ function fitText(root){
 const SHINY_DELAY = 1000;
 function shinyBeat(){
   const card = document.querySelector("#deckTrack .card");
-  if(card && !card.classList.contains("shiny")){
-    card.classList.add("shiny");
-    if(!card.querySelector(".sparkles")){
-      const s = document.createElement("div");
-      s.className = "sparkles"; s.innerHTML = SPARKS;
-      card.appendChild(s);
-    }
+  if(!card || card.classList.contains("shiny")) return;
+  card.classList.add("shiny");
+  if(!card.querySelector(".sparkles")){
+    const s = document.createElement("div");
+    s.className = "sparkles"; s.innerHTML = SPARKS;
+    card.appendChild(s);
   }
-  const fl = document.createElement("div");
-  fl.className = "shinyflash"; document.body.appendChild(fl);
-  const w = document.createElement("div");
-  w.className = "shinyword";
-  w.innerHTML = `<span>One in two thousand</span><b>You've found a Shiny!</b>`;
-  document.body.appendChild(w);
-  revealTimers.push(setTimeout(()=>fl.remove(), 950));
-  revealTimers.push(setTimeout(()=>w.remove(), 2650));
 }
 
 function flipCard(e){
@@ -1288,7 +1258,7 @@ function backFace(sp, v, count){
       <div class="kv">
         <i>This form</i><span>${count||0}</span>
         <i>All forms</i><span>${r.c||0}</span>
-        <i>Shiny</i><span>${r.sh||0}</span>
+        <i>Shiny</i><span>${((r.shv||{})[v.k]||0)} this form · ${r.sh||0} all forms</span>
         <i>First caught</i><span>${first}</span>
       </div>
     </div>
@@ -1305,6 +1275,7 @@ function oneCard(sp, v, count, ev, isCurrent){
   const file = v.art;
   const vs = variantsOf(sp);
   const gotForms = vs.filter(x => (r.v||{})[x.k]).length;
+  const shinyForm = ((r.shv||{})[v.k] || 0) > 0;
 
   const span = (arr) => {
     const a = [...new Set(arr)].sort((x,y)=>x-y);
@@ -1336,10 +1307,10 @@ function oneCard(sp, v, count, ev, isCurrent){
   }).join("");
 
   return `
-  <div class="card t-${t} ${isFull(sp,v)?"fullart":""} ${has?"":"vlocked"} ${(r.sh>0&&has)?"shiny":""}" style="--rl:${tv}66">
-    ${(r.sh>0&&has) ? `<div class="sparkles">${SPARKS}</div>` : ""}
-    ${isFull(sp,v) ? `<span class="tiertab" style="background:${(r.sh>0&&has)?"var(--shiny1)":tv}">${
-        (r.sh>0&&has) ? "Shiny "+TIERS[t][0] : TIERS[t][0]}</span>
+  <div class="card t-${t} ${isFull(sp,v)?"fullart":""} ${has?"":"vlocked"} ${(shinyForm&&has)?"shiny":""}" style="--rl:${tv}66">
+    ${(shinyForm&&has) ? `<div class="sparkles">${SPARKS}</div>` : ""}
+    ${isFull(sp,v) ? `<span class="tiertab" style="background:${(shinyForm&&has)?"var(--shiny1)":tv}">${
+        (shinyForm&&has) ? "Shiny "+TIERS[t][0] : TIERS[t][0]}</span>
        ${v.label?`<span class="vartab">${v.label}</span>`:""}` : ""}
     <button class="flipbtn" onclick="flipCard(event)">i</button>
     <div class="inner">
