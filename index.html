@@ -327,13 +327,17 @@ nav button svg{width:21px;height:21px}
 .card.vlocked{background:var(--line)!important;animation:none!important;box-shadow:none!important}
 
 .card.vlocked .card.vlocked 
-.card .art{flex:0 0 auto;position:relative}
-.card.t-A .art{height:42vh;max-height:380px}
-.card.t-X .art{height:35vh;max-height:310px}
-.card.t-R .art{height:31vh;max-height:270px}
-.card.t-U .art{height:27vh;max-height:235px}
-.card.t-C .art{height:24vh;max-height:205px}
-.card .body{flex:1 1 auto;padding:0 11px 12px;min-height:0;display:flex;flex-direction:column}
+/* The body is a fixed stack: title 34, facts 94, best row 53, credit 16,
+   months 42, padding 12 = about 251px. The art takes the tier height OR
+   whatever is left, whichever is smaller — so every card fits any screen
+   without scrolling, at every rarity. */
+.card{--ah:24vh;--bodyh:255px}
+.card.t-A{--ah:42vh} .card.t-X{--ah:36vh} .card.t-R{--ah:32vh}
+.card.t-U{--ah:28vh} .card.t-C{--ah:24vh}
+.card .art{flex:0 0 auto;position:relative;
+  height:max(104px, min(var(--ah), calc(84vh - var(--bodyh) - 12px)));
+  max-height:380px}
+.card .body{flex:0 0 auto;padding:0 11px 12px;display:flex;flex-direction:column}
 
 .tagbar{position:absolute;left:9px;right:9px;bottom:7px;z-index:6;
   display:flex;gap:5px;align-items:center;min-width:0}
@@ -344,30 +348,32 @@ nav button svg{width:21px;height:21px}
 .fr-Bronze{color:#c9925f} .fr-Silver{color:#ccd6de}
 .fr-Gold{color:var(--gold)} .fr-Platinum{color:#eef6fa}
 
-.card h2{font-size:18px;margin:8px 0 0;line-height:1.15}
+.card h2{font-size:18px;margin:7px 0 0;line-height:1.15;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .card .sci{font-size:10.5px;margin:0 0 4px}
 .rule{height:1px;background:linear-gradient(90deg,transparent,var(--rl,#2b4a3b) 22%,
   var(--rl,#2b4a3b) 78%,transparent);margin:4px 0 8px;position:relative}
 .rule::after{content:"";position:absolute;left:50%;top:-2px;width:5px;height:5px;
   transform:translateX(-50%) rotate(45deg);background:var(--rl,#2b4a3b)}
 
+/* NOTE the child combinator. ".facts div" matched the .tx wrapper too, so the
+   text block inherited display:flex plus its own background and border — which
+   is why the label and value sat side by side and both got truncated. */
 .facts{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:8px}
-.facts div{background:rgba(0,0,0,.34);border:1px solid rgba(255,255,255,.06);
-  border-radius:8px;padding:7px 9px;min-width:0;display:flex;gap:8px;align-items:center}
-.facts .ic{flex:0 0 auto;width:19px;height:19px;opacity:.9}
-.facts .tx{min-width:0;flex:1 1 auto}
-.facts b{display:block;font-size:9px;color:var(--dim);text-transform:uppercase;
-  letter-spacing:.6px;line-height:1.3;font-weight:600;white-space:nowrap;
-  overflow:hidden;text-overflow:ellipsis}
-/* No overflow-wrap:anywhere — it broke "Mottled" into "Mottl / ed". Long
-   values shrink instead of fragmenting. */
-.facts span{font-size:13px;font-weight:600;display:block;line-height:1.25;
+.facts > div{background:rgba(0,0,0,.34);border:1px solid rgba(255,255,255,.06);
+  border-radius:8px;padding:6px 8px;min-width:0;
+  display:flex;gap:8px;align-items:center;height:44px}
+.facts .ic{flex:0 0 auto;width:18px;height:18px;opacity:.9}
+.facts .tx{min-width:0;flex:1 1 auto;display:block;background:none;border:none;
+  padding:0;height:auto}
+.facts .tx b{display:block;font-size:8.5px;color:var(--dim);text-transform:uppercase;
+  letter-spacing:.5px;line-height:1.2;font-weight:600;
   white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.facts span.small{font-size:11px}
+.facts .tx span{display:block;font-size:13px;font-weight:600;line-height:1.25;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:1px}
 .bestrow{background:rgba(0,0,0,.34);border:1px solid rgba(255,255,255,.06);border-radius:7px;
-  padding:6px 9px;display:flex;align-items:center;gap:9px;margin-bottom:7px}
+  padding:6px 9px;display:flex;align-items:center;gap:9px;margin-bottom:6px;min-height:46px}
 .bestrow .ic{width:19px;height:19px;flex:0 0 auto;opacity:.85}
-.bestrow .where{flex:1 1 auto;min-width:0;font-size:11px;color:var(--dim);line-height:1.35}
+.bestrow .where{flex:1 1 auto;min-width:0;font-size:10.5px;color:var(--dim);line-height:1.3}
 .bestrow .odds{font-size:17px;font-weight:700;white-space:nowrap;letter-spacing:.3px}
 .bestrow .odds i{font-style:normal;font-size:9px;opacity:.75;margin:0 2px}
 .credit{font-size:8.5px;color:#4d6459;margin:0 0 5px;line-height:1.3}
@@ -433,7 +439,7 @@ nav button svg{width:21px;height:21px}
 <body>
 
 <header>
-  <div class="brand"><h1>BirdHunt</h1><span id="ver">v3.11</span></div>
+  <div class="brand"><h1>BirdHunt</h1><span id="ver">v3.12.1</span></div>
   <div class="ctx" id="ctx"></div>
 </header>
 
