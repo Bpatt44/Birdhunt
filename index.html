@@ -384,6 +384,33 @@ nav button svg{width:21px;height:21px}
 .card .mlabels{display:grid;grid-template-columns:repeat(12,1fr);gap:2px;
   font-size:8px;color:var(--dim);text-align:center;margin-top:2px}
 
+
+/* ---------- full-art cards: the painting IS the card ---------- */
+.card.fullart{--bodyh:0px}
+.card.fullart > .inner{position:relative;aspect-ratio:5/7;
+  max-height:calc(84vh - 12px);height:auto}
+.card.fullart .art{position:absolute;inset:0;height:100%!important;max-height:none}
+.card.fullart .art img.photo{object-fit:cover}
+/* one long scrim so overlaid text stays readable over a busy painting */
+.card.fullart .art::after{content:"";position:absolute;inset:0;z-index:4;pointer-events:none;
+  background:linear-gradient(180deg,rgba(6,12,9,.62) 0%,rgba(6,12,9,.12) 22%,
+             rgba(6,12,9,0) 38%,rgba(6,12,9,.55) 58%,rgba(6,12,9,.93) 78%,rgba(6,12,9,.98) 100%)}
+.card.fullart .tagbar{top:9px;bottom:auto;z-index:8}
+.card.fullart .body{position:absolute;left:0;right:0;bottom:0;z-index:8;
+  padding:0 11px 11px;background:none}
+.card.fullart h2{font-size:21px;margin:0;text-shadow:0 2px 14px rgba(0,0,0,.95)}
+.card.fullart .sci{font-size:11px;margin:0 0 7px;text-shadow:0 2px 10px rgba(0,0,0,.9)}
+.card.fullart .rule{display:none}
+/* glass panels rather than flat boxes, so the art shows through */
+.card.fullart .facts > div,
+.card.fullart .bestrow{background:rgba(8,16,12,.55);backdrop-filter:blur(7px);
+  border-color:rgba(255,255,255,.13)}
+.card.fullart .facts > div{height:40px}
+.card.fullart .facts .tx span{text-shadow:0 1px 6px rgba(0,0,0,.8)}
+.card.fullart .months i{border-color:rgba(255,255,255,.14)}
+.card.fullart .credit{color:#8ba69a;text-shadow:0 1px 6px rgba(0,0,0,.9)}
+.card.fullart .mlabel{text-shadow:0 1px 6px rgba(0,0,0,.9)}
+
 /* ---------- card modal ---------- */
 #modal{position:fixed;inset:0;z-index:60;display:none;align-items:center;justify-content:center;
   background:rgba(4,10,7,.86);backdrop-filter:blur(6px);padding:18px}
@@ -439,7 +466,7 @@ nav button svg{width:21px;height:21px}
 <body>
 
 <header>
-  <div class="brand"><h1>BirdHunt</h1><span id="ver">v3.12.1</span></div>
+  <div class="brand"><h1>BirdHunt</h1><span id="ver">v3.13.1</span></div>
   <div class="ctx" id="ctx"></div>
 </header>
 
@@ -638,6 +665,7 @@ const ART = {
   "Snow Bunting": {variants:[
     {k:"male",   label:"Male",   sex:"Male",   art:"snow-bunting-male"},
     {k:"female", label:"Female", sex:"Female", art:"snow-bunting-female"}]},
+  "Golden Eagle": {variants:[{k:"def", label:null, art:"golden-eagle", full:true}]},
   "Chough":             {variants:[{k:"def", label:null, art:"chough"}]},
   "Spotted Flycatcher": {variants:[{k:"def", label:null, art:"spotted-flycatcher", plate:true}]}
 };
@@ -688,7 +716,8 @@ const CREDITS = {
   "ptarmigan-winter":    {by:"", lic:"PD", url:""},
   "ptarmigan-summer":    {by:"", lic:"PD", url:""},
   "capercaillie-male":   {by:"", lic:"PD", url:""},
-  "spotted-flycatcher":  {by:"Archibald Thorburn", lic:"PD", url:""}
+  "spotted-flycatcher":  {by:"Archibald Thorburn", lic:"PD", url:""},
+  "golden-eagle":        {by:"", lic:"PD", url:""}
 };
 function creditLine(file){
   const c = CREDITS[file];
@@ -1027,7 +1056,7 @@ function oneCard(sp, v, count, ev, isCurrent){
   }).join("");
 
   return `
-  <div class="card t-${t} ${has?"":"vlocked"}" style="--rl:${tv}66">
+  <div class="card t-${t} ${v.full&&has?"fullart":""} ${has?"":"vlocked"}" style="--rl:${tv}66">
     <div class="inner">
     <div class="art">${bgfx}
       ${file ? `<img class="photo${v.plate?" plate":""}" src="art/${file}.webp" alt="${sp.n}">
