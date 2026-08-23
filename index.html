@@ -213,8 +213,8 @@ h3:first-of-type{border-top:none;padding-top:0;margin-top:4px}
   55%{opacity:1}
   100%{transform:scale(1) rotateY(0);opacity:1}}
 .reveal .slab .glow{position:absolute;inset:-40%;
-  background:conic-gradient(from 0deg,transparent,var(--rc,#7fc4a0),transparent 42%);
-  animation:spin 3s linear infinite;opacity:.55}
+  background:radial-gradient(circle at 50% 50%,var(--rc,#7fc4a0),transparent 62%);
+  opacity:.5}
 .reveal .slab .core{position:absolute;inset:2px;border-radius:13px;
   background:radial-gradient(circle at 50% 38%, color-mix(in srgb, var(--rc) 22%, #0b1710), #070f0b 72%);
   display:flex;align-items:center;justify-content:center}
@@ -557,9 +557,8 @@ nav button svg{width:21px;height:21px}
 .vars .got{color:var(--text)} .vars .not{color:#4d6459}
 .closeX{position:absolute;top:9px;right:11px;z-index:5;font-size:22px;color:#fff;opacity:.7;
   width:32px;height:32px;line-height:32px;text-align:center}
-.holo{position:absolute;inset:0;z-index:3;pointer-events:none;mix-blend-mode:color-dodge;opacity:.5;
-  background:conic-gradient(from 0deg,#f0f,#0ff,#ff0,#0f0,#f0f);animation:spin 4s linear infinite}
-@keyframes spin{to{transform:rotate(360deg) scale(1.6)}}
+/* .holo removed: it was a spinning conic overlay on the caught card. The
+   static frame plus sparkles carry the shiny now. */
 
 
 
@@ -580,7 +579,7 @@ nav button svg{width:21px;height:21px}
 <body>
 
 <header>
-  <div class="brand"><h1>BirdHunt</h1><span id="ver">v3.21.1</span></div>
+  <div class="brand"><h1>BirdHunt</h1><span id="ver">v3.21.2</span></div>
   <div class="ctx" id="ctx"></div>
 </header>
 
@@ -1320,7 +1319,6 @@ function oneCard(sp, v, count, ev, isCurrent){
                 <div class="vig"></div><div class="fade"></div>`
              : (has ? birdSVG(sp, 160, ev.shiny && isCurrent)
                     : `<div class="lockart">${SILHOUETTE}</div>`)}
-      ${has && ev.shiny && isCurrent ? '<div class="holo"></div>' : ''}
       ${"RXA".includes(t) && has ? '<div class="sweep"></div>' : ''}
       ${has ? "" : `<div class="vlock-msg"><b>Not yet found</b>${
           v.months ? "Look "+span(vMonths) : "Keep looking"}</div>`}
