@@ -465,6 +465,10 @@ nav button svg{width:21px;height:21px}
 .card.fullart .mlabels span{text-shadow:0 1px 2px rgba(0,0,0,.9)}
 
 
+.lockart{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+  background:radial-gradient(circle at 50% 42%,#1b3128,#0b1510 72%)}
+.lockart svg{width:52%;height:auto;opacity:.22}
+
 /* ---------- card flip ---------- */
 /* Horizontal swipe already moves between variants, so the flip is a VERTICAL
    swipe or a tap on the info tab. Overloading the same axis would make the
@@ -545,7 +549,7 @@ nav button svg{width:21px;height:21px}
 <body>
 
 <header>
-  <div class="brand"><h1>BirdHunt</h1><span id="ver">v3.19</span></div>
+  <div class="brand"><h1>BirdHunt</h1><span id="ver">v3.20.1</span></div>
   <div class="ctx" id="ctx"></div>
 </header>
 
@@ -735,7 +739,7 @@ const ART = {
     {k:"female", label:"Female", sex:"Female", art:"mallard-female"}]},
   "Capercaillie": {variants:[
     {k:"male",   label:"Male",   sex:"Male",   art:"capercaillie-male"},
-    {k:"female", label:"Female", sex:"Female", art:null}]},
+    {k:"female", label:"Female", sex:"Female", art:"capercaillie-female"}]},
   "Ptarmigan": {variants:[
     {k:"winter", label:"White · winter",   months:[11,0,1,2], art:"ptarmigan-winter"},
     {k:"spring", label:"Transitional",     months:[3,4],      art:null},
@@ -778,13 +782,14 @@ function artFile(sp, vk){
 }
 /* Ancients are always full-art. Where a portrait crop exists it is used, since
    letting object-fit centre-crop a landscape photo cuts the bird in half. */
-function isFull(sp, v){ return sp.t === "A" && !!v.art; }
+function isFull(sp, v){ return sp.t === "A"; }
 function fullFile(sp, v){
   if(!v.art) return null;
   return FULLART.has(v.art) ? v.art + "-full" : v.art;
 }
 const FULLART = new Set(["chough","ptarmigan-winter","ptarmigan-summer","capercaillie-male",
-                         "crane","crested-tit","cirl-bunting-male","cirl-bunting-female"]);
+                         "crane","crested-tit","cirl-bunting-male","cirl-bunting-female",
+                         "capercaillie-female"]);
 /* For the log tile: the first variant that actually has a picture. */
 function tileArt(sp){
   const v = variantsOf(sp).find(x => x.art);
@@ -802,20 +807,25 @@ function hasArt(sp){ return !!tileArt(sp); }
 const CREDITS = {
   "snow-bunting-male":   {by:"", lic:"PD", url:""},
   "snow-bunting-female": {by:"Charles J. Sharp", lic:"CC BY-SA 4.0",
-                          url:"https://commons.wikimedia.org/w/index.php?curid=174919933"},
+                          url:"https://commons.wikimedia.org/w/index.php?curid=174919933",
+                          licurl:"https://creativecommons.org/licenses/by-sa/4.0"},
   "mallard-male":        {by:"", lic:"PD", url:""},
   "mallard-female":      {by:"", lic:"PD", url:""},
   "chough":              {by:"", lic:"PD", url:""},
   "ptarmigan-winter":    {by:"", lic:"PD", url:""},
   "ptarmigan-summer":    {by:"", lic:"PD", url:""},
   "capercaillie-male":   {by:"", lic:"PD", url:""},
+  "capercaillie-female": {by:"Lars Falkdalen Lindahl", lic:"CC BY-SA 2.0",
+                          url:"https://commons.wikimedia.org/wiki/File:Tetrao_urogallus_-_Eurasian_Capercaille_-_Tj%C3%A4der.jpg",
+                          licurl:"https://creativecommons.org/licenses/by-sa/2.0"},
   "spotted-flycatcher":  {by:"Archibald Thorburn", lic:"PD", url:""},
   "golden-eagle":        {by:"", lic:"PD", url:""},
   "crane":               {by:"", lic:"PD", url:""},
   "crested-tit":         {by:"", lic:"PD", url:""},
   "cirl-bunting-male":   {by:"J.G. Keulemans", lic:"PD", url:""},
   "cirl-bunting-female": {by:"Charles J. Sharp", lic:"CC BY-SA 4.0",
-                          url:"https://commons.wikimedia.org/w/index.php?curid=178251725"}
+                          url:"https://commons.wikimedia.org/w/index.php?curid=178251725",
+                          licurl:"https://creativecommons.org/licenses/by-sa/4.0"}
 };
 function creditLine(file){
   const c = CREDITS[file];
@@ -1236,21 +1246,22 @@ function oneCard(sp, v, count, ev, isCurrent){
   }).join("");
 
   return `
-  <div class="card t-${t} ${isFull(sp,v)&&has?"fullart":""} ${has?"":"vlocked"}" style="--rl:${tv}66">
-    ${isFull(sp,v)&&has ? `<span class="tiertab" style="background:${tv}">${TIERS[t][0]}</span>
+  <div class="card t-${t} ${isFull(sp,v)?"fullart":""} ${has?"":"vlocked"}" style="--rl:${tv}66">
+    ${isFull(sp,v) ? `<span class="tiertab" style="background:${tv}">${TIERS[t][0]}</span>
        ${v.label?`<span class="vartab">${v.label}</span>`:""}` : ""}
     <button class="flipbtn" onclick="flipCard(event)">i</button>
     <div class="inner">
     <div class="face front">
     <div class="art">${bgfx}
-      ${file ? `<img class="photo${v.plate?" plate":""}" src="art/${isFull(sp,v)&&has?fullFile(sp,v):file}.webp" alt="${sp.n}">
+      ${(file && has) ? `<img class="photo${v.plate?" plate":""}" src="art/${isFull(sp,v)?fullFile(sp,v):file}.webp" alt="${sp.n}">
                 <div class="vig"></div><div class="fade"></div>`
-             : birdSVG(sp, 160, has && ev.shiny && isCurrent)}
+             : (has ? birdSVG(sp, 160, ev.shiny && isCurrent)
+                    : `<div class="lockart">${SILHOUETTE}</div>`)}
       ${has && ev.shiny && isCurrent ? '<div class="holo"></div>' : ''}
       ${"RXA".includes(t) && has ? '<div class="sweep"></div>' : ''}
       ${has ? "" : `<div class="vlock-msg"><b>Not yet found</b>${
           v.months ? "Look "+span(vMonths) : "Keep looking"}</div>`}
-      ${isFull(sp,v)&&has ? `<div class="topname"><h2>${sp.n}</h2><div class="sci">${sp.s}</div></div>` : `
+      ${isFull(sp,v) ? `<div class="topname"><h2>${sp.n}</h2><div class="sci">${sp.s}</div></div>` : `
       <div class="tagbar">
         <span class="tierbadge" style="background:${tv}">${TIERS[t][0]}</span>
         ${v.label?`<span class="tierbadge" style="background:rgba(8,20,14,.74);color:#cfe4f2;border:1px solid rgba(207,228,242,.35)">${v.label}</span>`:""}
@@ -1260,7 +1271,7 @@ function oneCard(sp, v, count, ev, isCurrent){
     </div>
 
     <div class="body">
-      ${isFull(sp,v)&&has ? "" : `<h2>${sp.n}</h2>
+      ${isFull(sp,v) ? "" : `<h2>${sp.n}</h2>
       <div class="sci">${sp.s}</div>
       <div class="rule"></div>`}
 
@@ -1383,10 +1394,11 @@ function renderCredits(){
     const who=c.by||"—";
     const lic=c.lic||"unverified";
     const link=c.url?` <a href="${c.url}" target="_blank" rel="noopener" style="color:var(--accent)">source</a>`:"";
+    const llink=c.licurl?` <a href="${c.licurl}" target="_blank" rel="noopener" style="color:var(--accent)">licence</a>`:"";
     const warn=(/CC BY/.test(lic)&&!c.by)||lic==="unverified";
     return `<div style="padding:4px 0;border-bottom:1px solid var(--line)">
       <b style="color:${warn?"var(--coral)":"var(--text)"}">${f}</b><br>
-      ${who} · ${lic}${link}</div>`;
+      ${who} · ${lic}${link}${llink}</div>`;
   }).join("");
   const pending=[...used].filter(f=>!CREDITS[f]||CREDITS[f].lic==="unverified").length;
   el.innerHTML=rows+`<div style="margin-top:9px">
