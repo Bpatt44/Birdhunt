@@ -545,7 +545,7 @@ nav button svg{width:21px;height:21px}
 <body>
 
 <header>
-  <div class="brand"><h1>BirdHunt</h1><span id="ver">v3.18.1</span></div>
+  <div class="brand"><h1>BirdHunt</h1><span id="ver">v3.19</span></div>
   <div class="ctx" id="ctx"></div>
 </header>
 
@@ -745,6 +745,11 @@ const ART = {
     {k:"male",   label:"Male",   sex:"Male",   art:"snow-bunting-male"},
     {k:"female", label:"Female", sex:"Female", art:"snow-bunting-female"}]},
   "Golden Eagle": {variants:[{k:"def", label:null, art:"golden-eagle"}]},
+  "Crane":        {variants:[{k:"def", label:null, art:"crane"}]},
+  "Crested Tit":  {variants:[{k:"def", label:null, art:"crested-tit"}]},
+  "Cirl Bunting": {variants:[
+    {k:"male",   label:"Male",   sex:"Male",   art:"cirl-bunting-male",   plate:true},
+    {k:"female", label:"Female", sex:"Female", art:"cirl-bunting-female"}]},
   "Chough":             {variants:[{k:"def", label:null, art:"chough"}]},
   "Spotted Flycatcher": {variants:[{k:"def", label:null, art:"spotted-flycatcher", plate:true}]}
 };
@@ -778,7 +783,8 @@ function fullFile(sp, v){
   if(!v.art) return null;
   return FULLART.has(v.art) ? v.art + "-full" : v.art;
 }
-const FULLART = new Set(["chough","ptarmigan-winter","ptarmigan-summer","capercaillie-male"]);
+const FULLART = new Set(["chough","ptarmigan-winter","ptarmigan-summer","capercaillie-male",
+                         "crane","crested-tit","cirl-bunting-male","cirl-bunting-female"]);
 /* For the log tile: the first variant that actually has a picture. */
 function tileArt(sp){
   const v = variantsOf(sp).find(x => x.art);
@@ -804,7 +810,12 @@ const CREDITS = {
   "ptarmigan-summer":    {by:"", lic:"PD", url:""},
   "capercaillie-male":   {by:"", lic:"PD", url:""},
   "spotted-flycatcher":  {by:"Archibald Thorburn", lic:"PD", url:""},
-  "golden-eagle":        {by:"", lic:"PD", url:""}
+  "golden-eagle":        {by:"", lic:"PD", url:""},
+  "crane":               {by:"", lic:"PD", url:""},
+  "crested-tit":         {by:"", lic:"PD", url:""},
+  "cirl-bunting-male":   {by:"J.G. Keulemans", lic:"PD", url:""},
+  "cirl-bunting-female": {by:"Charles J. Sharp", lic:"CC BY-SA 4.0",
+                          url:"https://commons.wikimedia.org/w/index.php?curid=178251725"}
 };
 function creditLine(file){
   const c = CREDITS[file];
