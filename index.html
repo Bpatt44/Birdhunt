@@ -422,15 +422,14 @@ nav button svg{width:21px;height:21px}
   padding:0 9px 9px;background:none;display:block}
 .card.fullart .facts{display:grid;grid-template-columns:repeat(4,1fr);gap:4px;margin-bottom:5px}
 .card.fullart .facts > div{flex-direction:column;align-items:center;gap:2px;height:auto;
-  padding:5px 3px;background:rgba(8,16,12,.26);backdrop-filter:blur(10px) saturate(1.2);
-  border-color:rgba(255,255,255,.18);border-radius:7px}
+  padding:2px 2px;background:none;backdrop-filter:none;border:none;border-radius:0}
 .card.fullart .facts .ic{width:14px;height:14px}
 .card.fullart .facts .tx{text-align:center;width:100%}
 .card.fullart .facts .tx span{font-size:11px;line-height:1.2;margin:0;
   text-shadow:0 1px 5px rgba(0,0,0,.8)}
 .card.fullart .facts .tx b{font-size:8px;letter-spacing:.3px;margin-top:1px}
-.card.fullart .bestrow{padding:4px 8px;min-height:0;margin-bottom:5px;gap:7px;
-  background:rgba(8,16,12,.26);backdrop-filter:blur(10px) saturate(1.2);border-color:rgba(255,255,255,.18)}
+.card.fullart .bestrow{padding:2px 2px;min-height:0;margin-bottom:6px;gap:8px;
+  background:none;backdrop-filter:none;border:none}
 .card.fullart .bestrow .ic{width:15px;height:15px}
 .card.fullart .bestrow .where{font-size:9px;line-height:1.25}
 .card.fullart .bestrow .odds{font-size:14px}
@@ -440,6 +439,30 @@ nav button svg{width:21px;height:21px}
 .card.fullart .months{gap:2px}
 .card.fullart .months i{height:9px;border-radius:2px;border-color:rgba(255,255,255,.14)}
 .card.fullart .mlabels{font-size:8px;margin-top:1px}
+
+
+/* ---------- full-art: unboxed text ---------- */
+/* No panels at all, so every glyph carries its own contrast. A tight dark
+   shadow plus a faint wider one keeps type crisp over both the pale sky and
+   the dark plumage without looking like it is glowing. */
+.card.fullart .facts .tx span,
+.card.fullart .bestrow .odds{font-weight:700;
+  text-shadow:0 1px 2px rgba(0,0,0,.95), 0 0 8px rgba(0,0,0,.75)}
+.card.fullart .facts .tx b,
+.card.fullart .bestrow .where{color:#cddcd3;font-weight:600;
+  text-shadow:0 1px 2px rgba(0,0,0,.95), 0 0 7px rgba(0,0,0,.7)}
+.card.fullart .facts .ic,
+.card.fullart .bestrow .ic{opacity:1;filter:drop-shadow(0 1px 2px rgba(0,0,0,.95))}
+/* thin dividers between the four facts, in place of the old boxes */
+.card.fullart .facts > div + div{border-left:1px solid rgba(255,255,255,.14)}
+.card.fullart .months i{border-color:rgba(255,255,255,.2);
+  box-shadow:0 1px 3px rgba(0,0,0,.6)}
+.card.fullart .mlabels span{text-shadow:0 1px 2px rgba(0,0,0,.9)}
+/* the bottom scrim does the heavy lifting now — deepen it slightly */
+.card.fullart .art::after{background:linear-gradient(180deg,
+    rgba(6,12,9,.82) 0%, rgba(6,12,9,.50) 13%, rgba(6,12,9,0) 22%,
+    rgba(6,12,9,0) 54%, rgba(6,12,9,.60) 66%, rgba(6,12,9,.90) 76%,
+    rgba(6,12,9,.97) 86%, rgba(6,12,9,.99) 100%)}
 
 /* ---------- card modal ---------- */
 #modal{position:fixed;inset:0;z-index:60;display:none;align-items:center;justify-content:center;
@@ -496,7 +519,7 @@ nav button svg{width:21px;height:21px}
 <body>
 
 <header>
-  <div class="brand"><h1>BirdHunt</h1><span id="ver">v3.15</span></div>
+  <div class="brand"><h1>BirdHunt</h1><span id="ver">v3.16</span></div>
   <div class="ctx" id="ctx"></div>
 </header>
 
