@@ -464,6 +464,32 @@ nav button svg{width:21px;height:21px}
   box-shadow:0 1px 3px rgba(0,0,0,.6)}
 .card.fullart .mlabels span{text-shadow:0 1px 2px rgba(0,0,0,.9)}
 
+
+/* ---------- card flip ---------- */
+/* Horizontal swipe already moves between variants, so the flip is a VERTICAL
+   swipe or a tap on the info tab. Overloading the same axis would make the
+   deck unusable. */
+.flipwrap{perspective:1400px;flex:1 1 auto;min-height:0;display:flex}
+.card.flipped > .inner{transform:rotateY(180deg)}
+.card > .inner{transition:transform .55s cubic-bezier(.3,.8,.3,1);transform-style:preserve-3d}
+.card > .inner > .face{backface-visibility:hidden;-webkit-backface-visibility:hidden;
+  display:flex;flex-direction:column;flex:1 1 auto;min-height:0}
+.card > .inner > .back{position:absolute;inset:0;transform:rotateY(180deg);
+  background:linear-gradient(180deg,#16281f,#0e1a15);padding:14px 13px 12px;overflow-y:auto}
+.flipbtn{position:absolute;top:8px;right:8px;z-index:14;width:26px;height:26px;
+  border-radius:50%;background:rgba(8,16,12,.6);border:1px solid rgba(255,255,255,.25);
+  color:#dbe7e0;font-size:13px;line-height:24px;text-align:center;font-style:italic;
+  font-family:Georgia,serif}
+.back h3{margin:0 0 2px;font-size:17px;color:var(--text)}
+.back .bsci{font-style:italic;color:var(--dim);font-size:11px;margin-bottom:10px}
+.sec{margin-bottom:10px}
+.sec b{display:block;font-size:8.5px;letter-spacing:1.1px;text-transform:uppercase;
+  color:var(--accent);margin-bottom:3px}
+.sec p{margin:0;font-size:11.5px;line-height:1.5;color:#c8d8ce}
+.sec p.todo{color:#5d7568;font-style:italic}
+.kv{display:grid;grid-template-columns:auto 1fr;gap:2px 10px;font-size:11px}
+.kv i{font-style:normal;color:var(--dim)}
+
 /* ---------- card modal ---------- */
 #modal{position:fixed;inset:0;z-index:60;display:none;align-items:center;justify-content:center;
   background:rgba(4,10,7,.86);backdrop-filter:blur(6px);padding:18px}
@@ -519,7 +545,7 @@ nav button svg{width:21px;height:21px}
 <body>
 
 <header>
-  <div class="brand"><h1>BirdHunt</h1><span id="ver">v3.17</span></div>
+  <div class="brand"><h1>BirdHunt</h1><span id="ver">v3.18</span></div>
   <div class="ctx" id="ctx"></div>
 </header>
 
@@ -718,7 +744,7 @@ const ART = {
   "Snow Bunting": {variants:[
     {k:"male",   label:"Male",   sex:"Male",   art:"snow-bunting-male"},
     {k:"female", label:"Female", sex:"Female", art:"snow-bunting-female"}]},
-  "Golden Eagle": {variants:[{k:"def", label:null, art:"golden-eagle", full:true}]},
+  "Golden Eagle": {variants:[{k:"def", label:null, art:"golden-eagle"}]},
   "Chough":             {variants:[{k:"def", label:null, art:"chough"}]},
   "Spotted Flycatcher": {variants:[{k:"def", label:null, art:"spotted-flycatcher", plate:true}]}
 };
@@ -745,6 +771,14 @@ function artFile(sp, vk){
   const v = variantsOf(sp).find(x => x.k === vk);
   return v && v.art ? v.art : null;
 }
+/* Ancients are always full-art. Where a portrait crop exists it is used, since
+   letting object-fit centre-crop a landscape photo cuts the bird in half. */
+function isFull(sp, v){ return sp.t === "A" && !!v.art; }
+function fullFile(sp, v){
+  if(!v.art) return null;
+  return FULLART.has(v.art) ? v.art + "-full" : v.art;
+}
+const FULLART = new Set(["chough","ptarmigan-winter","ptarmigan-summer","capercaillie-male"]);
 /* For the log tile: the first variant that actually has a picture. */
 function tileArt(sp){
   const v = variantsOf(sp).find(x => x.art);
@@ -1039,7 +1073,7 @@ function showCard(sp,ev){
   $("#modal").classList.add("on","deck");
   const track = $("#deckTrack");
   requestAnimationFrame(()=>{ track.scrollLeft = idx * track.clientWidth;
-    syncDeck(sp, vs, got); fitText($("#card")); });
+    syncDeck(sp, vs, got); fitText($("#card")); bindFlipSwipe($("#card")); });
   if(!single){
     track.onscroll = () => syncDeck(sp, vs, got);
     $("#dPrev").onclick = () => track.scrollBy({left:-track.clientWidth, behavior:"smooth"});
@@ -1057,6 +1091,29 @@ function fitText(root){
       size -= 0.5;
       el.style.fontSize = size + "px";
     }
+  });
+}
+
+function flipCard(e){
+  e.stopPropagation();
+  const card = e.target.closest(".card");
+  if(card) card.classList.toggle("flipped");
+}
+/* Vertical swipe flips. Horizontal is left alone for the variant deck. */
+function bindFlipSwipe(root){
+  root.querySelectorAll(".card").forEach(card=>{
+    let y0=null, x0=null;
+    card.addEventListener("touchstart",e=>{
+      if(e.touches.length!==1) return;
+      y0=e.touches[0].clientY; x0=e.touches[0].clientX;
+    },{passive:true});
+    card.addEventListener("touchend",e=>{
+      if(y0===null) return;
+      const t=e.changedTouches[0];
+      const dy=t.clientY-y0, dx=t.clientX-x0;
+      if(Math.abs(dy)>55 && Math.abs(dy)>Math.abs(dx)*1.6) card.classList.toggle("flipped");
+      y0=null; x0=null;
+    },{passive:true});
   });
 }
 
@@ -1082,6 +1139,50 @@ const IC = {
  forms:   c=>`<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="${c}" stroke-width="1.6" stroke-linejoin="round"><path d="M12 3l9 5-9 5-9-5z"/><path d="M3 13l9 5 9-5"/></svg>`,
  best:    c=>`<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="${c}" stroke-width="1.5" stroke-linejoin="round"><path d="M2 20l7-13 4 7 3-5 6 11z"/><path d="M9 7l1.5 2.6"/></svg>`
 };
+
+
+/* Back of the card. Sections are stubbed deliberately — the writing is a
+   separate pass across 262 species. */
+function backFace(sp, v, count){
+  const r = col[sp.i] || {c:0,v:{},t:0,sh:0};
+  const habs = Object.entries(sp.h).sort((a,b)=>b[1]-a[1])
+      .map(([k])=>HABS.find(x=>x[0]===k)[1]).slice(0,3).join(", ");
+  const first = r.t ? new Date(r.t).toLocaleDateString("en-GB",
+      {day:"numeric",month:"short",year:"numeric"}) : "—";
+  return `<div class="face back">
+    <h3>${sp.n}</h3>
+    <div class="bsci">${sp.s} · ${sp.f}</div>
+
+    <div class="sec"><b>Fun fact</b><p class="todo">To be written.</p></div>
+    <div class="sec"><b>Identification</b><p class="todo">To be written.</p></div>
+    <div class="sec"><b>Voice</b><p class="todo">To be written.</p></div>
+    <div class="sec"><b>Other names</b><p class="todo">To be written.</p></div>
+
+    <div class="sec"><b>Where and when</b>
+      <div class="kv">
+        <i>Habitat</i><span>${habs}</span>
+        <i>Range</i><span>${sp.L}</span>
+        <i>Best odds</i><span>1 in ${sp.bo.toLocaleString()} — ${sp.bp}, ${sp.bm}</span>
+      </div>
+    </div>
+
+    <div class="sec"><b>Conservation</b>
+      <div class="kv">
+        <i>BoCC5</i><span>${sp.b}</span>
+        <i>UK estimate</i><span>${sp.pop || "not yet sourced"}</span>
+      </div>
+    </div>
+
+    <div class="sec"><b>Your record</b>
+      <div class="kv">
+        <i>This form</i><span>${count||0}</span>
+        <i>All forms</i><span>${r.c||0}</span>
+        <i>Shiny</i><span>${r.sh||0}</span>
+        <i>First caught</i><span>${first}</span>
+      </div>
+    </div>
+  </div>`;
+}
 
 function oneCard(sp, v, count, ev, isCurrent){
   const t  = sp.t;
@@ -1124,19 +1225,21 @@ function oneCard(sp, v, count, ev, isCurrent){
   }).join("");
 
   return `
-  <div class="card t-${t} ${v.full&&has?"fullart":""} ${has?"":"vlocked"}" style="--rl:${tv}66">
-    ${v.full&&has ? `<span class="tiertab" style="background:${tv}">${TIERS[t][0]}</span>
+  <div class="card t-${t} ${isFull(sp,v)&&has?"fullart":""} ${has?"":"vlocked"}" style="--rl:${tv}66">
+    ${isFull(sp,v)&&has ? `<span class="tiertab" style="background:${tv}">${TIERS[t][0]}</span>
        ${v.label?`<span class="vartab">${v.label}</span>`:""}` : ""}
+    <button class="flipbtn" onclick="flipCard(event)">i</button>
     <div class="inner">
+    <div class="face front">
     <div class="art">${bgfx}
-      ${file ? `<img class="photo${v.plate?" plate":""}" src="art/${file}.webp" alt="${sp.n}">
+      ${file ? `<img class="photo${v.plate?" plate":""}" src="art/${isFull(sp,v)&&has?fullFile(sp,v):file}.webp" alt="${sp.n}">
                 <div class="vig"></div><div class="fade"></div>`
              : birdSVG(sp, 160, has && ev.shiny && isCurrent)}
       ${has && ev.shiny && isCurrent ? '<div class="holo"></div>' : ''}
       ${"RXA".includes(t) && has ? '<div class="sweep"></div>' : ''}
       ${has ? "" : `<div class="vlock-msg"><b>Not yet found</b>${
           v.months ? "Look "+span(vMonths) : "Keep looking"}</div>`}
-      ${v.full&&has ? `<div class="topname"><h2>${sp.n}</h2><div class="sci">${sp.s}</div></div>` : `
+      ${isFull(sp,v)&&has ? `<div class="topname"><h2>${sp.n}</h2><div class="sci">${sp.s}</div></div>` : `
       <div class="tagbar">
         <span class="tierbadge" style="background:${tv}">${TIERS[t][0]}</span>
         ${v.label?`<span class="tierbadge" style="background:rgba(8,20,14,.74);color:#cfe4f2;border:1px solid rgba(207,228,242,.35)">${v.label}</span>`:""}
@@ -1146,7 +1249,7 @@ function oneCard(sp, v, count, ev, isCurrent){
     </div>
 
     <div class="body">
-      ${v.full&&has ? "" : `<h2>${sp.n}</h2>
+      ${isFull(sp,v)&&has ? "" : `<h2>${sp.n}</h2>
       <div class="sci">${sp.s}</div>
       <div class="rule"></div>`}
 
@@ -1168,6 +1271,8 @@ function oneCard(sp, v, count, ev, isCurrent){
       <div class="months">${months}</div>
       <div class="mlabels">${MON3.map(m=>`<span>${m}</span>`).join("")}</div>
     </div>
+    </div>
+    ${backFace(sp, v, count)}
   </div></div>`;
 }
 function closeCard(){clearReveal();$("#modal").classList.remove("on","deck");}
