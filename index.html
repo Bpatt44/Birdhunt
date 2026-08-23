@@ -395,16 +395,18 @@ nav button svg{width:21px;height:21px}
    third for the data. The middle two thirds are left completely clear. */
 .card.fullart .art::after{content:"";position:absolute;inset:0;z-index:4;pointer-events:none;
   background:linear-gradient(180deg,
-    rgba(6,12,9,.82) 0%, rgba(6,12,9,.50) 13%, rgba(6,12,9,0) 22%,
-    rgba(6,12,9,0) 58%, rgba(6,12,9,.72) 70%, rgba(6,12,9,.95) 82%, rgba(6,12,9,.97) 100%)}
+    rgba(6,12,9,0) 0%, rgba(6,12,9,0) 62%,
+    rgba(6,12,9,.18) 72%, rgba(6,12,9,.34) 84%, rgba(6,12,9,.44) 100%)}
 
 /* name at the top, over the scrim band */
 .card.fullart .topname{position:absolute;top:9px;left:12px;right:12px;z-index:9}
 .card.fullart .topname{top:26px}
 .card.fullart .topname h2{font-size:20px;margin:0;line-height:1.1;
-  text-shadow:0 2px 12px rgba(0,0,0,.98),0 0 26px rgba(0,0,0,.8)}
+  text-shadow:0 1px 2px rgba(0,0,0,1), 0 2px 10px rgba(0,0,0,.95),
+              0 0 24px rgba(0,0,0,.85), 0 0 44px rgba(0,0,0,.6)}
 .card.fullart .topname .sci{font-size:10px;margin:1px 0 0;font-style:italic;
-  color:#b6cabe;text-shadow:0 2px 10px rgba(0,0,0,.9)}
+  color:#dbe7e0;text-shadow:0 1px 2px rgba(0,0,0,1), 0 0 12px rgba(0,0,0,.9),
+              0 0 24px rgba(0,0,0,.6)}
 
 /* tier tag straddles the top border, clear of the artwork */
 .card.fullart .tiertab{position:absolute;top:0;left:50%;transform:translateX(-50%);
@@ -446,23 +448,21 @@ nav button svg{width:21px;height:21px}
    shadow plus a faint wider one keeps type crisp over both the pale sky and
    the dark plumage without looking like it is glowing. */
 .card.fullart .facts .tx span,
-.card.fullart .bestrow .odds{font-weight:700;
-  text-shadow:0 1px 2px rgba(0,0,0,.95), 0 0 8px rgba(0,0,0,.75)}
+.card.fullart .bestrow .odds{font-weight:800;
+  text-shadow:0 1px 1px rgba(0,0,0,1), 0 1px 4px rgba(0,0,0,.95),
+              0 0 12px rgba(0,0,0,.85), 0 0 22px rgba(0,0,0,.6)}
 .card.fullart .facts .tx b,
-.card.fullart .bestrow .where{color:#cddcd3;font-weight:600;
-  text-shadow:0 1px 2px rgba(0,0,0,.95), 0 0 7px rgba(0,0,0,.7)}
+.card.fullart .bestrow .where{color:#e2ece6;font-weight:700;
+  text-shadow:0 1px 1px rgba(0,0,0,1), 0 1px 4px rgba(0,0,0,.95),
+              0 0 11px rgba(0,0,0,.8), 0 0 20px rgba(0,0,0,.55)}
 .card.fullart .facts .ic,
 .card.fullart .bestrow .ic{opacity:1;filter:drop-shadow(0 1px 2px rgba(0,0,0,.95))}
 /* thin dividers between the four facts, in place of the old boxes */
-.card.fullart .facts > div + div{border-left:1px solid rgba(255,255,255,.14)}
+.card.fullart .facts > div + div{border-left:1px solid rgba(255,255,255,.22);
+  box-shadow:-1px 0 2px rgba(0,0,0,.5)}
 .card.fullart .months i{border-color:rgba(255,255,255,.2);
   box-shadow:0 1px 3px rgba(0,0,0,.6)}
 .card.fullart .mlabels span{text-shadow:0 1px 2px rgba(0,0,0,.9)}
-/* the bottom scrim does the heavy lifting now — deepen it slightly */
-.card.fullart .art::after{background:linear-gradient(180deg,
-    rgba(6,12,9,.82) 0%, rgba(6,12,9,.50) 13%, rgba(6,12,9,0) 22%,
-    rgba(6,12,9,0) 54%, rgba(6,12,9,.60) 66%, rgba(6,12,9,.90) 76%,
-    rgba(6,12,9,.97) 86%, rgba(6,12,9,.99) 100%)}
 
 /* ---------- card modal ---------- */
 #modal{position:fixed;inset:0;z-index:60;display:none;align-items:center;justify-content:center;
@@ -519,7 +519,7 @@ nav button svg{width:21px;height:21px}
 <body>
 
 <header>
-  <div class="brand"><h1>BirdHunt</h1><span id="ver">v3.16</span></div>
+  <div class="brand"><h1>BirdHunt</h1><span id="ver">v3.17</span></div>
   <div class="ctx" id="ctx"></div>
 </header>
 
