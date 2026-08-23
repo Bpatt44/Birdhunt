@@ -6,7 +6,7 @@
    itself updates. Network-first on the shell means a deploy lands as soon as
    the device is online, and the cache is only used as an offline fallback.  */
 
-const CACHE = "birdhunt-v3.21.4";
+const CACHE = "birdhunt-v3.22.1";
 const SHELL = ["./", "./index.html", "./manifest.webmanifest"];
 
 self.addEventListener("install", e => {

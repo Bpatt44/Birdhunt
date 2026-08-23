@@ -471,6 +471,21 @@ nav button svg{width:21px;height:21px}
 .lockart svg{width:52%;height:auto;opacity:.22}
 
 
+
+/* ---------- shiny blip ---------- */
+/* Keeps its rarity ring — the tier still matters — but gains an ice-blue
+   backglow and the tier dot becomes a star. A tell, not a giveaway. */
+.blip.shinyblip::before{content:"";position:absolute;inset:-12px;border-radius:50%;
+  background:radial-gradient(circle,rgba(143,224,255,.55),rgba(58,169,221,.18) 55%,transparent 72%);
+  z-index:-1}
+.blip.shinyblip .mystery{border-color:rgba(190,240,255,.85);
+  box-shadow:0 0 14px rgba(143,224,255,.75),0 4px 10px rgba(0,0,0,.55)}
+.blip.shinyblip img.photo{border-color:rgba(190,240,255,.9);
+  box-shadow:0 0 14px rgba(143,224,255,.75),0 3px 8px rgba(0,0,0,.6)}
+.blip .tierdot.star{background:none;border:none;width:auto;height:auto;
+  bottom:-8px;font-size:13px;line-height:1;color:var(--shiny1);
+  text-shadow:0 0 6px var(--shiny2),0 0 12px var(--shiny2),0 1px 2px rgba(0,0,0,.9)}
+
 /* ---------- shiny ---------- */
 /* One shiny per SPECIES, not per form: once you have it, every card in that
    entry wears the treatment. The frame turns ice-blue and gains sparkles. */
@@ -513,9 +528,9 @@ nav button svg{width:21px;height:21px}
   display:flex;flex-direction:column;flex:1 1 auto;min-height:0}
 .card > .inner > .back{position:absolute;inset:0;transform:rotateY(180deg);
   background:linear-gradient(180deg,#16281f,#0e1a15);padding:14px 13px 12px;overflow-y:auto}
-.flipbtn{position:absolute;top:9px;left:11px;z-index:14;font-size:22px;color:#fff;opacity:.7;
-  width:32px;height:32px;line-height:32px;text-align:center;background:none;border:none;
-  font-style:italic;font-family:Georgia,serif;text-shadow:0 1px 6px rgba(0,0,0,.9)}
+.flipbtn{position:absolute;top:3px;left:4px;z-index:14;font-size:15px;color:#fff;opacity:.62;
+  width:22px;height:22px;line-height:22px;text-align:center;background:none;border:none;
+  font-style:italic;font-family:Georgia,serif;text-shadow:0 1px 6px rgba(0,0,0,.95)}
 .back h3{margin:0 0 2px;font-size:17px;color:var(--text)}
 .back .bsci{font-style:italic;color:var(--dim);font-size:11px;margin-bottom:10px}
 .sec{margin-bottom:10px}
@@ -581,7 +596,7 @@ nav button svg{width:21px;height:21px}
 <body>
 
 <header>
-  <div class="brand"><h1>BirdHunt</h1><span id="ver">v3.21.4</span></div>
+  <div class="brand"><h1>BirdHunt</h1><span id="ver">v3.22.1</span></div>
   <div class="ctx" id="ctx"></div>
 </header>
 
@@ -991,7 +1006,7 @@ function scan(){
     const e=rollOne(pool); if(!e) continue;
     active.push(e);
     const el=document.createElement("div");
-    el.className="blip"; el.dataset.t=e.sp.t;
+    el.className="blip"+(e.shiny?" shinyblip":""); el.dataset.t=e.sp.t;
     el.style.left=(12+Math.random()*76)+"%";
     el.style.top =(12+Math.random()*74)+"%";
     el.style.animationDelay=(i*90)+"ms";
@@ -1008,7 +1023,8 @@ function scan(){
           ? (bk ? `<img class="photo" src="art/${bk}-thumb.webp" alt="">`
                 : birdSVG(e.sp,56,e.shiny))
           : `<div class="mystery">${SILHOUETTE}</div>`)
-      + `<div class="tierdot"></div>`;
+      + (e.shiny ? `<div class="tierdot star">✦</div>`
+                 : `<div class="tierdot"></div>`);
     el.onclick=()=>collect(e,el);
     field.appendChild(el);
   }
@@ -1030,7 +1046,7 @@ function collect(e,el){
   save();
   const left=[...$("#field").querySelectorAll(".blip:not(.taken)")].length;
   $("#tally").textContent=left?`${left} still in range`:"Area cleared.";
-  showCard(e.sp,{isNew,shiny:e.shiny,sex:e.sex,vk:e.vk,newForm:e.newForm});
+  showCard(e.sp,{isNew,shiny:e.shiny,sex:e.sex,vk:e.vk,newForm:e.newForm,caught:true});
   renderLog();
 }
 
@@ -1276,7 +1292,11 @@ function oneCard(sp, v, count, ev, isCurrent){
   const file = v.art;
   const vs = variantsOf(sp);
   const gotForms = vs.filter(x => (r.v||{})[x.k]).length;
-  const shinyForm = ((r.shv||{})[v.k] || 0) > 0;
+  /* Opened from a catch: the card is shiny only if THIS bird was shiny.
+     Browsing the log: the card is shiny if that form has ever been shiny.
+     Otherwise every later Ptarmigan would arrive looking like a jackpot. */
+  const shinyForm = ev.caught ? (!!ev.shiny && isCurrent)
+                              : (((r.shv||{})[v.k] || 0) > 0);
 
   const span = (arr) => {
     const a = [...new Set(arr)].sort((x,y)=>x-y);
