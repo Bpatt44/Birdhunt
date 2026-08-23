@@ -596,7 +596,7 @@ nav button svg{width:21px;height:21px}
 <body>
 
 <header>
-  <div class="brand"><h1>BirdHunt</h1><span id="ver">v3.22.1</span></div>
+  <div class="brand"><h1>BirdHunt</h1><span id="ver">v3.22.3</span></div>
   <div class="ctx" id="ctx"></div>
 </header>
 
@@ -1015,7 +1015,7 @@ function scan(){
     const rr = col[e.sp.i];
     // Have we already got THIS form? If not the blip stays a mystery: you can
     // see something is there and roughly how rare it is, but not what.
-    const known = !!(rr && rr.v && rr.v[vk]);
+    const known = !!(rr && rr.c > 0 && rr.v && rr.v[vk] > 0);
     e.known = known;
     if(known) el.classList.remove("unknown"); else el.classList.add("unknown");
     el.innerHTML = `<div class="ring"></div><div class="ring2"></div>`
@@ -1174,7 +1174,10 @@ function fitText(root){
    would waste the surprise. */
 const SHINY_DELAY = 1000;
 function shinyBeat(){
-  const card = document.querySelector("#deckTrack .card");
+  const track = document.getElementById("deckTrack");
+  if(!track) return;
+  const i = Math.round(track.scrollLeft / Math.max(1, track.clientWidth));
+  const card = track.children[i] || track.children[0];
   if(!card || card.classList.contains("shiny")) return;
   card.classList.add("shiny");
   if(!card.querySelector(".sparkles")){
@@ -1361,7 +1364,7 @@ function oneCard(sp, v, count, ev, isCurrent){
       <div class="facts">
         <div>${IC.plumage(tv)}<div class="tx"><b>Plumage</b><span>${plumage}</span></div></div>
         <div>${IC.count(tv)}<div class="tx"><b>UK est.</b><span>${pop}</span></div></div>
-        <div>${IC.found(tv)}<div class="tx"><b>Found</b><span>${count||0}</span></div></div>
+        <div>${IC.found(tv)}<div class="tx"><b>Found</b><span>${r.c||0}</span></div></div>
         <div>${IC.forms(tv)}<div class="tx"><b>Forms</b><span>${gotForms}/${vs.length}</span></div></div>
       </div>
 
