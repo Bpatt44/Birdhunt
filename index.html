@@ -513,10 +513,9 @@ nav button svg{width:21px;height:21px}
   display:flex;flex-direction:column;flex:1 1 auto;min-height:0}
 .card > .inner > .back{position:absolute;inset:0;transform:rotateY(180deg);
   background:linear-gradient(180deg,#16281f,#0e1a15);padding:14px 13px 12px;overflow-y:auto}
-.flipbtn{position:absolute;top:8px;right:8px;z-index:14;width:26px;height:26px;
-  border-radius:50%;background:rgba(8,16,12,.6);border:1px solid rgba(255,255,255,.25);
-  color:#dbe7e0;font-size:13px;line-height:24px;text-align:center;font-style:italic;
-  font-family:Georgia,serif}
+.flipbtn{position:absolute;top:9px;left:11px;z-index:14;font-size:22px;color:#fff;opacity:.7;
+  width:32px;height:32px;line-height:32px;text-align:center;background:none;border:none;
+  font-style:italic;font-family:Georgia,serif;text-shadow:0 1px 6px rgba(0,0,0,.9)}
 .back h3{margin:0 0 2px;font-size:17px;color:var(--text)}
 .back .bsci{font-style:italic;color:var(--dim);font-size:11px;margin-bottom:10px}
 .sec{margin-bottom:10px}
@@ -557,8 +556,9 @@ nav button svg{width:21px;height:21px}
 .vars .vrow:last-child{border-bottom:none}
 .vars .dot{width:9px;height:9px;border-radius:50%;flex:0 0 auto}
 .vars .got{color:var(--text)} .vars .not{color:#4d6459}
-.closeX{position:absolute;top:9px;right:11px;z-index:5;font-size:22px;color:#fff;opacity:.7;
-  width:32px;height:32px;line-height:32px;text-align:center}
+.closeX{position:absolute;top:9px;right:11px;z-index:14;font-size:22px;color:#fff;opacity:.7;
+  width:32px;height:32px;line-height:32px;text-align:center;
+  text-shadow:0 1px 6px rgba(0,0,0,.9)}
 /* .holo removed: it was a spinning conic overlay on the caught card. The
    static frame plus sparkles carry the shiny now. */
 
@@ -581,7 +581,7 @@ nav button svg{width:21px;height:21px}
 <body>
 
 <header>
-  <div class="brand"><h1>BirdHunt</h1><span id="ver">v3.21.3</span></div>
+  <div class="brand"><h1>BirdHunt</h1><span id="ver">v3.21.4</span></div>
   <div class="ctx" id="ctx"></div>
 </header>
 
