@@ -366,6 +366,7 @@ nav button svg{width:21px;height:21px}
 .bestrow .where{flex:1 1 auto;min-width:0;font-size:11px;color:var(--dim);line-height:1.35}
 .bestrow .odds{font-size:17px;font-weight:700;white-space:nowrap;letter-spacing:.3px}
 .bestrow .odds i{font-style:normal;font-size:9px;opacity:.75;margin:0 2px}
+.credit{font-size:8.5px;color:#4d6459;margin:0 0 5px;line-height:1.3}
 .mlabel{font-size:9px;color:var(--dim);text-transform:uppercase;letter-spacing:1px;
   margin-bottom:3px}
 .card .months{display:grid;grid-template-columns:repeat(12,1fr);gap:2px;margin:0}
@@ -428,7 +429,7 @@ nav button svg{width:21px;height:21px}
 <body>
 
 <header>
-  <div class="brand"><h1>BirdHunt</h1><span id="ver">v3.9.1</span></div>
+  <div class="brand"><h1>BirdHunt</h1><span id="ver">v3.10</span></div>
   <div class="ctx" id="ctx"></div>
 </header>
 
@@ -493,6 +494,9 @@ nav button svg{width:21px;height:21px}
     <div class="set"><label>Gamma — global rarity dial</label><select id="sGamma"></select></div>
     <div class="set"><label>Shiny rate</label><select id="sShiny"></select></div>
     <div class="note" id="poolNote"></div>
+
+    <h3>Image credits</h3>
+    <div class="note" id="creditList"></div>
 
     <h3>Data</h3>
     <button class="btn" id="expBtn">Export collection (JSON)</button>
@@ -621,6 +625,9 @@ const ART = {
     {k:"spring", label:"Transitional",     months:[3,4],      art:null},
     {k:"summer", label:"Grey · summer",    months:[5,6,7],    art:null},
     {k:"autumn", label:"Mottled · autumn", months:[8,9,10],   art:"ptarmigan-summer"}]},
+  "Snow Bunting": {variants:[
+    {k:"male",   label:"Male",   sex:"Male",   art:"snow-bunting-male"},
+    {k:"female", label:"Female", sex:"Female", art:"snow-bunting-female"}]},
   "Chough":             {variants:[{k:"def", label:null, art:"chough"}]},
   "Spotted Flycatcher": {variants:[{k:"def", label:null, art:"spotted-flycatcher", plate:true}]}
 };
@@ -653,6 +660,33 @@ function tileArt(sp){
   return v ? v.art : null;
 }
 function hasArt(sp){ return !!tileArt(sp); }
+
+
+/* ==========================================================================
+   IMAGE CREDITS
+   CC BY and CC BY-SA legally REQUIRE attribution, so this is not optional
+   politeness. Keyed by art file. Anything marked unverified still needs its
+   source and licence confirming before this goes anywhere public.
+   ========================================================================== */
+const CREDITS = {
+  "snow-bunting-male":   {by:"", lic:"PD", url:""},
+  "snow-bunting-female": {by:"Charles J. Sharp", lic:"CC BY-SA 4.0",
+                          url:"https://commons.wikimedia.org/w/index.php?curid=174919933"},
+  "mallard-male":        {by:"", lic:"unverified", url:""},
+  "mallard-female":      {by:"", lic:"unverified", url:""},
+  "chough":              {by:"", lic:"unverified", url:""},
+  "ptarmigan-winter":    {by:"", lic:"unverified", url:""},
+  "ptarmigan-summer":    {by:"", lic:"unverified", url:""},
+  "capercaillie-male":   {by:"", lic:"unverified", url:""},
+  "spotted-flycatcher":  {by:"Archibald Thorburn", lic:"PD", url:""}
+};
+function creditLine(file){
+  const c = CREDITS[file];
+  if(!c) return "";
+  if(c.lic === "PD") return c.by ? c.by + " · public domain" : "Public domain";
+  if(!c.by) return "Licence not yet verified";
+  return c.by + " · " + c.lic;
+}
 
 /* ---------- collection helpers ---------- */
 function rec(id){
@@ -1019,6 +1053,7 @@ function oneCard(sp, v, count, ev, isCurrent){
         <div class="odds" style="color:${tv}">1<i>IN</i>${sp.bo.toLocaleString()}</div>
       </div>
 
+      ${file&&creditLine(file)?`<div class="credit">${creditLine(file)}</div>`:""}
       <div class="mlabel">${v.months?"This form appears":"Findable"}</div>
       <div class="months">${months}</div>
       <div class="mlabels">${MON3.map(m=>`<span>${m}</span>`).join("")}</div>
@@ -1113,6 +1148,27 @@ $("#logClear").onclick=()=>{
 
 function opts(el,arr,val){el.innerHTML=arr.map(([v,l])=>
   `<option value="${v}" ${v==val?"selected":""}>${l}</option>`).join("");}
+function renderCredits(){
+  const el=$("#creditList"); if(!el) return;
+  const used=new Set();
+  for(const sp of SPECIES) for(const v of variantsOf(sp)) if(v.art) used.add(v.art);
+  const rows=[...used].sort().map(f=>{
+    const c=CREDITS[f]||{};
+    const who=c.by||"—";
+    const lic=c.lic||"unverified";
+    const link=c.url?` <a href="${c.url}" target="_blank" rel="noopener" style="color:var(--accent)">source</a>`:"";
+    const warn=(/CC BY/.test(lic)&&!c.by)||lic==="unverified";
+    return `<div style="padding:4px 0;border-bottom:1px solid var(--line)">
+      <b style="color:${warn?"var(--coral)":"var(--text)"}">${f}</b><br>
+      ${who} · ${lic}${link}</div>`;
+  }).join("");
+  const pending=[...used].filter(f=>!CREDITS[f]||CREDITS[f].lic==="unverified").length;
+  el.innerHTML=rows+`<div style="margin-top:9px">
+    ${pending?`<span style="color:var(--coral)">${pending} image${pending===1?"":"s"} still need a verified source and licence.</span><br>`:""}
+    CC BY and CC BY-SA require attribution. Cropping an image creates a derivative,
+    so a BY-SA source obliges the derivative to carry BY-SA too.</div>`;
+}
+
 function renderSettings(){
   $("#sRegion").innerHTML=
     '<optgroup label="Regions">'+REGIONS.map(([v,l])=>`<option value="${v}" ${v==cfg.region?"selected":""}>${l}</option>`).join("")+'</optgroup>'+
@@ -1318,7 +1374,7 @@ $$("nav button").forEach(b=>b.onclick=()=>{
 });
 
 /* ---------- boot ---------- */
-load(); renderSettings(); renderCtx(); renderFilters(); renderLog();
+load(); renderSettings(); renderCredits(); renderCtx(); renderFilters(); renderLog();
 /* Register the worker and actively check for updates. If a new build is found,
    activate it immediately and reload once — no more stale builds on mobile. */
 if("serviceWorker" in navigator){
