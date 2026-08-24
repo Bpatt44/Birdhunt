@@ -862,7 +862,10 @@ const ART = {
     {k:"male",   label:"Male",   sex:"Male",   art:"hen-harrier-male"},
     {k:"female", label:"Female", sex:"Female", art:"hen-harrier-female"}]},
   "Chough":             {variants:[{k:"def", label:null, art:"chough"}]},
-  "Spotted Flycatcher": {variants:[{k:"def", label:null, art:"spotted-flycatcher", plate:true}]}
+  "Spotted Flycatcher": {variants:[{k:"def", label:null, art:"spotted-flycatcher", plate:true}]},
+  "Golden Oriole": {variants:[
+    {k:"male",   label:"Male",   sex:"Male",   art:"golden-oriole-male"},
+    {k:"female", label:"Female", sex:"Female", art:"golden-oriole-female"}]}
 };
 
 /* Every species has at least one variant. Dimorphic species without a bespoke
@@ -903,7 +906,7 @@ function fullFile(sp, v){
 }
 const FULLART = new Set(["chough","ptarmigan-winter","ptarmigan-summer","capercaillie-male",
                          "crane","crested-tit","cirl-bunting-male","cirl-bunting-female",
-                         "capercaillie-female"]);
+                         "capercaillie-female","golden-oriole-male","golden-oriole-female"]);
 /* For the log tile: the first variant that actually has a picture. */
 function tileArt(sp){
   const v = variantsOf(sp).find(x => x.art);
@@ -941,7 +944,9 @@ const CREDITS = {
   "cirl-bunting-male":   {by:"J.G. Keulemans", lic:"PD", url:""},
   "cirl-bunting-female": {by:"Charles J. Sharp", lic:"CC BY-SA 4.0",
                           url:"https://commons.wikimedia.org/w/index.php?curid=178251725",
-                          licurl:"https://creativecommons.org/licenses/by-sa/4.0"}
+                          licurl:"https://creativecommons.org/licenses/by-sa/4.0"},
+  "golden-oriole-male":   {by:"", lic:"unverified", url:""},
+  "golden-oriole-female": {by:"", lic:"unverified", url:""}
 };
 function creditLine(file){
   const c = CREDITS[file];
