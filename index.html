@@ -563,6 +563,18 @@ nav button svg{width:21px;height:21px}
 .card.halfart .months i{height:13px}
 
 
+
+/* ---------- where you are, under the deck ---------- */
+/* The card carries BEST odds anywhere — a fact about the bird. This line
+   answers the other question: can I get it from where I am right now? */
+.deck-here{margin-top:9px;padding:7px 11px;border-radius:9px;
+  background:rgba(0,0,0,.34);border:1px solid var(--line);
+  display:flex;align-items:center;gap:9px;font-size:11px;color:var(--dim)}
+.deck-here .ctxt{flex:1 1 auto;min-width:0;line-height:1.35}
+.deck-here .ctxt b{color:#cddcd3;font-weight:600}
+.deck-here .num{white-space:nowrap;font-size:14px;font-weight:700}
+.deck-here.absent .num{font-size:11px;font-weight:600;color:#6d8a7c}
+
 /* ---------- card flip ---------- */
 /* Horizontal swipe already moves between variants, so the flip is a VERTICAL
    swipe or a tap on the info tab. Overloading the same axis would make the
@@ -642,7 +654,7 @@ nav button svg{width:21px;height:21px}
 <body>
 
 <header>
-  <div class="brand"><h1>BirdHunt</h1><span id="ver">v3.23</span></div>
+  <div class="brand"><h1>BirdHunt</h1><span id="ver">v3.23.1</span></div>
   <div class="ctx" id="ctx"></div>
 </header>
 
@@ -1196,11 +1208,12 @@ function showCard(sp,ev){
          <div class="deck-dots" id="deckDots">${vs.map((v,i)=>
            `<i class="${i===idx?"on":""} ${got[v.k]?"":"locked"}"></i>`).join("")}</div>
          <div class="deck-count" id="deckCount"></div>`}
+       <div class="deck-here" id="deckHere"></div>
      </div>`;
   $("#modal").classList.add("on","deck");
   const track = $("#deckTrack");
   requestAnimationFrame(()=>{ track.scrollLeft = idx * track.clientWidth;
-    syncDeck(sp, vs, got); fitText($("#card")); bindFlipSwipe($("#card"));
+    syncDeck(sp, vs, got); renderHere(sp); fitText($("#card")); bindFlipSwipe($("#card"));
     if(ev.shiny) revealTimers.push(setTimeout(shinyBeat, SHINY_DELAY)); });
   if(!single){
     track.onscroll = () => syncDeck(sp, vs, got);
@@ -1262,6 +1275,20 @@ function bindFlipSwipe(root){
       y0=null; x0=null;
     },{passive:true});
   });
+}
+
+function renderHere(sp){
+  const el = document.getElementById("deckHere"); if(!el) return;
+  const od = oddsFor(sp);
+  const where = `${HABS.find(x=>x[0]===cfg.hab)[1]}, ${MONTHS[cfg.month]}, ${RNAME[cfg.region]||cfg.region}`;
+  const tv = getComputedStyle(document.documentElement)
+              .getPropertyValue(TIERS[sp.t][1]).trim();
+  el.className = "deck-here" + (od ? "" : " absent");
+  el.innerHTML = od
+    ? `<div class="ctxt">Odds where you are now<br><b>${where}</b></div>
+       <div class="num" style="color:${tv}">1 in ${od.n.toLocaleString()}</div>`
+    : `<div class="ctxt">Not findable where you are now<br><b>${where}</b></div>
+       <div class="num">&mdash;</div>`;
 }
 
 function syncDeck(sp, vs, got){
