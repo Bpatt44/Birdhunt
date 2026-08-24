@@ -44,6 +44,7 @@ main{flex:1 1 auto;overflow-y:auto;-webkit-overflow-scrolling:touch;position:rel
 .view{display:none;padding:10px 12px 16px}
 .view.on{display:block}
 
+
 /* ---------- scan ---------- */
 #field{
   position:relative;width:100%;
@@ -233,6 +234,50 @@ h3:first-of-type{border-top:none;padding-top:0;margin-top:4px}
   color:var(--rc,#7fc4a0);margin-bottom:5px}
 .skiphint{position:fixed;bottom:34px;left:0;right:0;text-align:center;z-index:94;
   font-size:10.5px;color:#6d8a7c;letter-spacing:1.2px}
+
+
+/* ---------- feathers ---------- */
+/* A found feather banks a charge. Charges never expire and there are no
+   timers: an app built to take a year should not create urgency. Every
+   effect changes how MANY birds you see, never which ones or at what odds,
+   so a card caught under a charge means exactly what any other card means. */
+.blip.feather .quill{position:absolute;inset:0;display:flex;align-items:center;
+  justify-content:center;border-radius:50%;
+  background:radial-gradient(circle at 44% 36%,#3c4a2e,#151d12 74%);
+  border:2px solid rgba(226,208,138,.75);
+  box-shadow:0 0 16px rgba(226,208,138,.45),0 4px 10px rgba(0,0,0,.55)}
+.blip.feather .quill svg{width:62%;height:62%}
+.blip.feather .ring,.blip.feather .ring2{border-color:#e2d08a!important}
+.blip.feather .tierdot{background:#e2d08a}
+
+.tray{display:flex;gap:6px;margin-top:9px}
+.tray button{flex:1 1 0;min-width:0;padding:7px 6px;border-radius:10px;
+  background:var(--panel);border:1px solid var(--line);text-align:left;
+  display:flex;gap:7px;align-items:center}
+.tray button:disabled{opacity:.38}
+.tray button.armed{border-color:#e2d08a;background:#22301c;
+  box-shadow:0 0 12px rgba(226,208,138,.3)}
+.tray .qi{flex:0 0 auto;width:17px;height:17px;color:#e2d08a}
+.tray .qt{min-width:0}
+.tray .qt b{display:block;font-size:10px;line-height:1.2;color:var(--text);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tray .qt span{display:block;font-size:8.5px;color:var(--dim);line-height:1.2}
+.tray .qn{margin-left:auto;font-size:12px;font-weight:700;color:#e2d08a}
+#trayNote{margin-top:6px;font-size:10.5px;color:var(--dim);min-height:14px;text-align:center}
+
+.featherPop{position:fixed;left:0;right:0;top:38%;z-index:95;text-align:center;
+  pointer-events:none;opacity:0;animation:featherIn 2.2s ease forwards}
+.featherPop b{display:block;font-size:19px;color:#f2e6b4;
+  text-shadow:0 2px 14px rgba(0,0,0,.95),0 0 26px rgba(226,208,138,.7)}
+.featherPop span{display:block;font-size:10px;letter-spacing:3px;text-transform:uppercase;
+  color:#e2d08a;margin-bottom:4px;text-shadow:0 2px 8px rgba(0,0,0,.9)}
+.featherPop i{display:block;font-style:normal;font-size:11px;color:#b9c8ae;margin-top:3px}
+@keyframes featherIn{
+  0%{opacity:0;transform:translateY(16px) scale(.8)}
+  14%{opacity:1;transform:translateY(0) scale(1.05)}
+  24%{transform:scale(1)}
+  74%{opacity:1}
+  100%{opacity:0;transform:translateY(-26px) scale(.93)}}
 
 /* ---------- nav ---------- */
 nav{flex:0 0 auto;display:grid;grid-template-columns:repeat(4,1fr);
@@ -593,7 +638,7 @@ nav button svg{width:21px;height:21px}
 <body>
 
 <header>
-  <div class="brand"><h1>BirdHunt</h1><span id="ver">v4.3</span></div>
+  <div class="brand"><h1>BirdHunt</h1><span id="ver">v4.4</span></div>
   <div class="ctx" id="ctx"></div>
 </header>
 
@@ -606,6 +651,8 @@ nav button svg{width:21px;height:21px}
       <button class="mini" id="rndBtn" title="Randomise context">🎲</button>
     </div>
     <div id="tally"></div>
+    <div class="tray" id="tray"></div>
+    <div id="trayNote"></div>
   </section>
 
   <!-- ============ LOG ============ -->
@@ -1001,6 +1048,112 @@ const SILHOUETTE = `<svg viewBox="0 0 260 190" xmlns="http://www.w3.org/2000/svg
  <path d="M192 64 C199 62 204 66 204 69 C202 73 195 74 191 72 Z" fill="#cfe0d6"/>
 </svg>`;
 
+
+/* ==========================================================================
+   FEATHERS
+   Moulted feathers turn up on the scan field. Collecting them is harmless and
+   legal, which egg-collecting is not — worth being deliberate about in an app
+   that also lists Schedule 1 species.
+
+   Every charge changes how MANY birds a scan returns, or lets you draw again.
+   None of them touch the odds. That keeps the log honest: a Ptarmigan means
+   the same thing whether or not a charge was running when you caught it.
+   And nothing expires — an app built to take a year should not manufacture
+   urgency, so charges bank until you choose to spend them.
+   ========================================================================== */
+const FEATHER_CHANCE = 40;          // roughly one scan in forty
+const CHARGES = {
+  flush: {name:"Flush",       blurb:"Double birds, next scan",  uses:1},
+  again: {name:"Second look", blurb:"Re-draw the field now",    uses:1},
+  watch: {name:"Long watch",  blurb:"+50% birds, next 5 scans", uses:5}
+};
+const QUILL = `<svg viewBox="0 0 24 24" fill="none" stroke="#e2d08a" stroke-width="1.7"
+  stroke-linecap="round" stroke-linejoin="round">
+  <path d="M19 4c-7 0-13 5-14 13 0 0 0 2 1 2 8-1 13-8 13-15z"/>
+  <path d="M6 19l6-6"/><path d="M13 6v7h-7"/></svg>`;
+
+let feathers = {flush:0, again:0, watch:0};
+let armed = null;
+let watchLeft = 0;
+
+function saveFeathers(){
+  try{ localStorage.setItem("bh_feathers", JSON.stringify({f:feathers,w:watchLeft})); }catch(e){}
+}
+function loadFeathers(){
+  try{
+    const raw = localStorage.getItem("bh_feathers");
+    if(raw){ const d = JSON.parse(raw);
+      feathers = Object.assign({flush:0,again:0,watch:0}, d.f||{});
+      watchLeft = d.w||0; }
+  }catch(e){}
+}
+function renderTray(){
+  const el = $("#tray"); if(!el) return;
+  el.innerHTML = Object.entries(CHARGES).map(([k,c])=>{
+    const n = feathers[k]||0;
+    const on = armed===k || (k==="watch" && watchLeft>0);
+    const label = (k==="watch" && watchLeft>0) ? `${watchLeft} scans left` : c.blurb;
+    return `<button data-c="${k}" class="${on?"armed":""}" ${(n||on)?"":"disabled"}>
+      <span class="qi">${QUILL}</span>
+      <span class="qt"><b>${c.name}</b><span>${label}</span></span>
+      <span class="qn">${n}</span></button>`;
+  }).join("");
+  el.querySelectorAll("button").forEach(b=>b.onclick=()=>useCharge(b.dataset.c));
+}
+function useCharge(k){
+  const note = $("#trayNote");
+  if(k==="again"){
+    if(!(feathers.again>0)) return;
+    feathers.again--; saveFeathers(); renderTray();
+    if(note) note.textContent = "Second look — drawing again.";
+    scan(); return;
+  }
+  if(k==="watch"){
+    if(watchLeft>0){ if(note) note.textContent = `Long watch running — ${watchLeft} scans left.`; return; }
+    if(!(feathers.watch>0)) return;
+    feathers.watch--; watchLeft = CHARGES.watch.uses; saveFeathers(); renderTray();
+    if(note) note.textContent = "Long watch begins — the next 5 scans return more birds.";
+    return;
+  }
+  if(armed===k){ armed=null; if(note) note.textContent=""; renderTray(); return; }
+  if(!(feathers[k]>0)) return;
+  armed = k; renderTray();
+  if(note) note.textContent = CHARGES[k].name + " ready — it applies to your next scan.";
+}
+/* Weather sets the base count; charges multiply it. Nothing here changes
+   which species are drawn or at what odds. */
+function scanCount(base){
+  let n = base;
+  if(armed === "flush"){ n = Math.round(n*2); feathers.flush--; armed = null; }
+  if(watchLeft > 0){ n = Math.round(n*1.5); watchLeft--; }
+  saveFeathers(); renderTray();
+  return n;
+}
+/* A feather is not a bird: it sits on the field as its own blip and never
+   enters the collection or the odds. */
+function dropFeather(field){
+  const el=document.createElement("div");
+  el.className="blip feather";
+  el.style.left=(14+Math.random()*72)+"%";
+  el.style.top =(14+Math.random()*70)+"%";
+  el.style.animationDelay="240ms";
+  el.innerHTML=`<div class="ring"></div><div class="ring2"></div>`
+    +`<div class="quill">${QUILL}</div><div class="tierdot"></div>`;
+  el.onclick=()=>{ el.classList.add("taken"); grantFeather(); };
+  field.appendChild(el);
+}
+function grantFeather(){
+  const keys = Object.keys(CHARGES);
+  const k = keys[Math.floor(Math.random()*keys.length)];
+  feathers[k] = (feathers[k]||0)+1;
+  saveFeathers(); renderTray();
+  const pop = document.createElement("div");
+  pop.className = "featherPop";
+  pop.innerHTML = `<span>Moulted feather</span><b>${CHARGES[k].name}</b><i>${CHARGES[k].blurb}</i>`;
+  document.body.appendChild(pop);
+  setTimeout(()=>pop.remove(), 2250);
+}
+
 function scan(){
   const pool=currentPool();
   const field=$("#field");
@@ -1009,7 +1162,7 @@ function scan(){
   if(!pool.length){ $("#hint").style.display="flex";
     $("#hint").innerHTML="No species can be found in this context.<br>Change the habitat, month or region."; return; }
   const W=(WX.find(w=>w[0]===cfg.wx)||WX[0])[2];
-  const n=W.n[0]+Math.floor(Math.random()*(W.n[1]-W.n[0]+1));
+  const n=scanCount(W.n[0]+Math.floor(Math.random()*(W.n[1]-W.n[0]+1)));
   active=[];
   for(let i=0;i<n;i++){
     const e=rollOne(pool); if(!e) continue;
@@ -1037,6 +1190,7 @@ function scan(){
     el.onclick=()=>collect(e,el);
     field.appendChild(el);
   }
+  if(Math.floor(Math.random()*FEATHER_CHANCE)===0) dropFeather(field);
   $("#tally").textContent=`${active.length} bird${active.length===1?"":"s"} in range — tap to collect`;
 }
 function collect(e,el){
@@ -1547,7 +1701,8 @@ function randomise(){
 $("#rndBtn").onclick=randomise; $("#rnd2").onclick=randomise;
 $("#scanBtn").onclick=scan;
 $("#resetBtn").onclick=()=>{if(confirm("Delete the entire collection? This cannot be undone."))
-  {col={};save();renderLog();alert("Collection reset.");}};
+  {col={};feathers={flush:0,again:0,watch:0};armed=null;watchLeft=0;
+   save();saveFeathers();renderLog();renderTray();alert("Collection reset.");}};
 $("#expBtn").onclick=()=>{
   const blob=new Blob([JSON.stringify({cfg,col},null,2)],{type:"application/json"});
   const a=document.createElement("a");
@@ -1722,7 +1877,7 @@ $$("nav button").forEach(b=>b.onclick=()=>{
 });
 
 /* ---------- boot ---------- */
-load(); renderSettings(); renderCredits(); renderCtx(); renderFilters(); renderLog();
+load(); loadFeathers(); renderSettings(); renderCredits(); renderTray(); renderCtx(); renderFilters(); renderLog();
 /* Register the worker and actively check for updates. If a new build is found,
    activate it immediately and reload once — no more stale builds on mobile. */
 if("serviceWorker" in navigator){
