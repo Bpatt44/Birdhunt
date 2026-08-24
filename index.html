@@ -651,7 +651,7 @@ nav button svg{width:21px;height:21px}
 <body>
 
 <header>
-  <div class="brand"><h1>BirdHunt</h1><span id="ver">v4.5.1</span></div>
+  <div class="brand"><h1>BirdHunt</h1><span id="ver">v4.6</span></div>
   <div class="ctx" id="ctx"></div>
 </header>
 
@@ -853,6 +853,9 @@ const ART = {
     {k:"male",   label:"Male",   sex:"Male",   art:"snow-bunting-male"},
     {k:"female", label:"Female", sex:"Female", art:"snow-bunting-female"}]},
   "Golden Eagle": {variants:[{k:"def", label:null, art:"golden-eagle"}]},
+  "Golden Oriole": {variants:[
+    {k:"male",   label:"Male",   sex:"Male",   art:"golden-oriole-male"},
+    {k:"female", label:"Female", sex:"Female", art:"golden-oriole-female"}]},
   "Crane":        {variants:[{k:"def", label:null, art:"crane"}]},
   "Crested Tit":  {variants:[{k:"def", label:null, art:"crested-tit"}]},
   "Cirl Bunting": {variants:[
@@ -903,7 +906,8 @@ function fullFile(sp, v){
 }
 const FULLART = new Set(["chough","ptarmigan-winter","ptarmigan-summer","capercaillie-male",
                          "crane","crested-tit","cirl-bunting-male","cirl-bunting-female",
-                         "capercaillie-female"]);
+                         "capercaillie-female",
+                         "golden-oriole-male","golden-oriole-female"]);
 /* For the log tile: the first variant that actually has a picture. */
 function tileArt(sp){
   const v = variantsOf(sp).find(x => x.art);
@@ -934,6 +938,8 @@ const CREDITS = {
                           licurl:"https://creativecommons.org/licenses/by-sa/2.0"},
   "spotted-flycatcher":  {by:"Archibald Thorburn", lic:"PD", url:""},
   "golden-eagle":        {by:"", lic:"PD", url:""},
+  "golden-oriole-male":  {by:"", lic:"PD", url:""},
+  "golden-oriole-female":{by:"", lic:"PD", url:""},
   "crane":               {by:"", lic:"PD", url:""},
   "hen-harrier-male":    {by:"", lic:"unverified", url:""},
   "hen-harrier-female":  {by:"", lic:"unverified", url:""},
