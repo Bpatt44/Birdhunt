@@ -13,7 +13,7 @@
   --bg:#0e1a15; --bg2:#12211a; --panel:#182c23; --panel2:#1f3a2e;
   --line:#2b4a3b; --text:#e8f0ea; --dim:#8fa89a; --accent:#7fc4a0;
   --coral:#e2725b; --gold:#d9a441;
-  --t-C:#7f9c7f; --t-U:#5b91c4; --t-R:#9b7fd4; --t-X:#e08b48; --t-A:#e2725b;
+  --t-C:#7f9c7f; --t-U:#5b91c4; --t-R:#9b7fd4; --t-X:#e8b53a; --t-A:#e2725b;
   --safe-t:env(safe-area-inset-top,0px); --safe-b:env(safe-area-inset-bottom,0px);
 }
 html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
@@ -284,8 +284,8 @@ nav button svg{width:21px;height:21px}
   border:2px solid rgba(255,255,255,.6);box-shadow:0 3px 8px rgba(0,0,0,.6)}
 
 @keyframes ultraGlow{
-  0%,100%{box-shadow:0 0 16px rgba(224,139,72,.26)}
-  50%    {box-shadow:0 0 30px rgba(224,139,72,.48)}}
+  0%,100%{box-shadow:0 0 18px rgba(232,181,58,.30)}
+  50%    {box-shadow:0 0 34px rgba(232,181,58,.54)}}
 
   
  
@@ -344,8 +344,8 @@ nav button svg{width:21px;height:21px}
  
 
 @keyframes ultraGlow{
-  0%,100%{box-shadow:0 0 16px rgba(224,139,72,.26)}
-  50%    {box-shadow:0 0 30px rgba(224,139,72,.48)}}
+  0%,100%{box-shadow:0 0 18px rgba(232,181,58,.30)}
+  50%    {box-shadow:0 0 34px rgba(232,181,58,.54)}}
 
                                                                                                                                                                                                  
 
@@ -458,13 +458,13 @@ nav button svg{width:21px;height:21px}
 .card.t-U{--art:44%;background:linear-gradient(145deg,#9fc9ee,#5b91c4 48%,#33608c)}
 .card.t-R{--art:50%;background:linear-gradient(145deg,#cbb6f5,#9b7fd4 45%,#5d3f96);
   box-shadow:0 0 18px rgba(155,127,212,.30)}
-.card.t-X{--art:58%;padding:4px;background:linear-gradient(145deg,#f6c894,#e08b48 40%,#8a4a18 70%,#e08b48);
+.card.t-X{--art:58%;padding:4px;background:linear-gradient(145deg,#fbe9a8,#e8b53a 38%,#9a7412 68%,#f0c94e);
   animation:ultraGlow 5.5s ease-in-out infinite}
 .card.t-A{--art:100%;padding:4px;background:linear-gradient(145deg,#ffd8cc,#e2725b 26%,#7d2418 56%,#e2725b 80%,#ffb59f);
-  animation:grailGlow 4.5s ease-in-out infinite}
+  animation:legendGlow 4.5s ease-in-out infinite}
 .card.vlocked{background:var(--line)!important;animation:none!important;box-shadow:none!important}
 
-/* --- edge accents, Ultra and Grail only --- */
+/* --- edge accents, Ultra Rare and Legendary only --- */
 .card.t-X > .inner::before,.card.t-A > .inner::before,
 .card.t-X > .inner::after,.card.t-A > .inner::after{content:"";position:absolute;
   width:24px;height:24px;z-index:9;pointer-events:none;opacity:.8;
@@ -475,7 +475,7 @@ nav button svg{width:21px;height:21px}
   border-bottom-width:2px;border-right-width:2px;border-radius:0 0 8px 0}
 .card.vlocked > .inner::before,.card.vlocked > .inner::after{opacity:.18}
 
-/* --- Grail: the picture is the card --- */
+/* --- Legendary: the picture is the card --- */
 .card.t-A .art{position:absolute;inset:0;height:100%}
 .card.t-A .body{position:absolute;left:0;right:0;bottom:0;z-index:8;
   padding:0 10px 20px;background:none}
@@ -585,7 +585,7 @@ nav button svg{width:21px;height:21px}
   box-shadow:0 0 34px rgba(143,224,255,.55),0 0 84px rgba(58,169,221,.28)!important}
 .card.shiny .tiertab{background:var(--shiny1)!important;color:#04212e!important}
 
-@keyframes grailGlow{
+@keyframes legendGlow{
   0%,100%{box-shadow:0 0 24px rgba(226,114,91,.32),0 0 58px rgba(226,114,91,.12)}
   50%{box-shadow:0 0 44px rgba(226,114,91,.56),0 0 98px rgba(226,114,91,.22)}}
 </style>
@@ -593,7 +593,7 @@ nav button svg{width:21px;height:21px}
 <body>
 
 <header>
-  <div class="brand"><h1>BirdHunt</h1><span id="ver">v4.2</span></div>
+  <div class="brand"><h1>BirdHunt</h1><span id="ver">v4.3</span></div>
   <div class="ctx" id="ctx"></div>
 </header>
 
@@ -720,7 +720,7 @@ const HW={0:0,1:0.15,2:0.5,3:1.0};   // damped scale, used for habitat AND regio
 // Interpolate from national (range edge) to in-range (stronghold) by region weight.
 function effRate(s,rw){ return s.r + (s.e-s.r)*(rw>1?(rw-1)/2:0); }
 const TIERS={C:["Common","--t-C"],U:["Uncommon","--t-U"],R:["Rare","--t-R"],
-             X:["Ultra Rare","--t-X"],A:["Grail","--t-A"]};
+             X:["Ultra Rare","--t-X"],A:["Legendary","--t-A"]};
 const FINISH={
   C:{Silver:10,Gold:50,Platinum:250}, U:{Silver:6,Gold:25,Platinum:100},
   R:{Silver:3,Gold:10,Platinum:30},   X:{Silver:2,Gold:5,Platinum:12},
