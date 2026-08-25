@@ -651,7 +651,7 @@ nav button svg{width:21px;height:21px}
 <body>
 
 <header>
-  <div class="brand"><h1>BirdHunt</h1><span id="ver">v4.7</span></div>
+  <div class="brand"><h1>BirdHunt</h1><span id="ver">v4.7.1</span></div>
   <div class="ctx" id="ctx"></div>
 </header>
 
@@ -1351,6 +1351,7 @@ async function onFix(pos){
   if(acc > ACCURACY_LIMIT_M){ gpsStatus(`Fix is ±${Math.round(acc)}m — waiting for better.`); return; }
   lastFix = {lon, lat, acc, t:Date.now()};
   const r = regionFromFix(lon, lat);
+  const prevRegion = cfg.region, prevHab = cfg.hab;
   if(r) cfg.region = r.region;
   gpsStatus(`${RNAME[cfg.region]||cfg.region} · ±${Math.round(acc)}m · reading the map…`);
   try{
@@ -1363,7 +1364,9 @@ async function onFix(pos){
   }catch(e){
     gpsStatus(`${RNAME[cfg.region]||cfg.region} · map lookup failed, habitat unchanged`, "bad");
   }
+  const before = cfg.region + "/" + cfg.hab + "/" + cfg.month;
   cfg.month = new Date().getMonth();
+  if(cfg.region + "/" + cfg.hab + "/" + cfg.month === before) return;  // nothing moved
   save(); renderSettings(); sync();
 }
 
@@ -1920,8 +1923,23 @@ $("#logClear").onclick=()=>{
   logQ=""; $("#logSearch").value=""; $("#logClear").style.display="none"; renderLog();
 };
 
-function opts(el,arr,val){el.innerHTML=arr.map(([v,l])=>
-  `<option value="${v}" ${v==val?"selected":""}>${l}</option>`).join("");}
+/* Rebuilding a <select>'s innerHTML while its native picker is open closes
+   it mid-tap. GPS fires a fix every few seconds, so this was happening
+   constantly. Only rebuild when the option list has actually changed, and
+   never while the control has focus. */
+function opts(el,arr,val){
+  if(!el) return;
+  const sig = arr.map(o=>o[0]+"|"+o[1]).join("~");
+  if(el.dataset.sig === sig){
+    if(String(el.value) !== String(val)) el.value = val;
+    return;
+  }
+  if(document.activeElement === el) return;   // picker is open — leave it alone
+  el.dataset.sig = sig;
+  el.innerHTML = arr.map(([v,l])=>
+    `<option value="${v}" ${v==val?"selected":""}>${l}</option>`).join("");
+  el.value = val;
+}
 function renderCredits(){
   const el=$("#creditList"); if(!el) return;
   const used=new Set();
@@ -1945,9 +1963,13 @@ function renderCredits(){
 }
 
 function renderSettings(){
+  const rsig = REGIONDEF.length + ":" + cfg.region;
+  if($("#sRegion").dataset.sig !== rsig && document.activeElement !== $("#sRegion")){
+  $("#sRegion").dataset.sig = rsig;
   $("#sRegion").innerHTML=
     '<optgroup label="Regions">'+REGIONS.map(([v,l])=>`<option value="${v}" ${v==cfg.region?"selected":""}>${l}</option>`).join("")+'</optgroup>'+
     '<optgroup label="Named sites">'+SITES.map(([v,l,p])=>`<option value="${v}" ${v==cfg.region?"selected":""}>${l}</option>`).join("")+'</optgroup>';
+  } else if($("#sRegion").value !== cfg.region){ $("#sRegion").value = cfg.region; }
   opts($("#sHab"),HABS,cfg.hab);
   opts($("#sMonth"),MONTHS.map((m,i)=>[i,m]),cfg.month);
   opts($("#sWx"),WX.map(w=>[w[0],w[1]]),cfg.wx);
