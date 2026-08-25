@@ -651,7 +651,7 @@ nav button svg{width:21px;height:21px}
 <body>
 
 <header>
-  <div class="brand"><h1>BirdHunt</h1><span id="ver">v4.6</span></div>
+  <div class="brand"><h1>BirdHunt</h1><span id="ver">v4.7</span></div>
   <div class="ctx" id="ctx"></div>
 </header>
 
@@ -708,11 +708,19 @@ nav button svg{width:21px;height:21px}
   <!-- ============ SETTINGS ============ -->
   <section class="view" id="v-set">
     <h3>Location</h3>
+    <div class="set"><label>Source</label><select id="sSource"></select></div>
+    <div class="note" id="gpsNote" style="margin:-4px 0 12px"></div>
     <div class="set"><label>Region</label><select id="sRegion"></select></div>
     <div class="set"><label>Habitat</label><select id="sHab"></select></div>
     <div class="set"><label>Month</label><select id="sMonth"></select></div>
     <div class="set"><label>Weather</label><select id="sWx"></select></div>
     <button class="btn" id="rnd2">🎲 Randomise everything</button>
+
+    <h3>Scanning</h3>
+    <div class="set"><label>Scan availability</label><select id="sGate"></select></div>
+    <div class="note">Gated scanning opens a scan every 5 minutes, or every 200m
+      walked — whichever comes first. Walking is always the faster route, which
+      is rather the point.</div>
 
     <h3>Engine</h3>
     <div class="set"><label>Gamma — global rarity dial</label><select id="sGamma"></select></div>
@@ -787,7 +795,8 @@ const FINISH={
   A:{Silver:2,Gold:3,Platinum:5}};
 
 /* ---------- state ---------- */
-const DEF={region:"SE",hab:"SUB",month:0,wx:"clear",gamma:1.5,shiny:2000};
+const DEF={region:"SE",hab:"SUB",month:0,wx:"clear",gamma:1.5,shiny:2000,
+           source:"manual",gated:false};
 const WXCODES=["clear","cloud","rain","wind"];
 let cfg=Object.assign({},DEF), col={}, active=[], filter="all", logQ="";
 
@@ -1172,6 +1181,226 @@ function grantFeather(){
   document.body.appendChild(pop);
   setTimeout(()=>pop.remove(), 2250);
 }
+
+
+/* ==========================================================================
+   LOCATION
+   Two sources, chosen in Settings:
+
+     Manual  — the pickers, as before. Nothing here runs.
+     GPS     — the device fixes lat/lon; the region comes from the same
+               polygons the map draws, and the habitat comes from Overpass.
+
+   The region test is offline and instant. Only the habitat needs the network,
+   and it caches hard, because Overpass is slow and rate-limited and a bird
+   app should never sit waiting on it.
+   ========================================================================== */
+
+/* --- region from a fix -------------------------------------------------- */
+/* Ray casting on the same lon/lat rings the map already uses. They are
+   schematic, so a fix near a boundary can land in the neighbour; good enough
+   to pick a bird pool, not good enough to draw a border with. */
+function pointInRing(lon, lat, ring){
+  let inside = false;
+  for(let i = 0, j = ring.length - 1; i < ring.length; j = i++){
+    const [xi, yi] = ring[i], [xj, yj] = ring[j];
+    if(((yi > lat) !== (yj > lat)) &&
+       (lon < (xj - xi) * (lat - yi) / (yj - yi) + xi)) inside = !inside;
+  }
+  return inside;
+}
+function kmBetween(a, b){                    // rough, fine at these distances
+  const dLat = (b[1] - a[1]) * 111;
+  const dLon = (b[0] - a[0]) * 111 * Math.cos((a[1] + b[1]) / 2 * Math.PI / 180);
+  return Math.hypot(dLat, dLon);
+}
+/* A named site wins if you are close enough to it, because being AT Abernethy
+   should mean more than being in the Highlands. Otherwise fall back to the
+   region polygon, and if the fix is at sea or just outside a crude ring, to
+   the nearest region centroid. */
+const SITE_RADIUS_KM = 22;
+function regionFromFix(lon, lat){
+  let best = null;
+  for(const code in SITEPOS){
+    const d = kmBetween([lon, lat], SITEPOS[code]);
+    if(d <= SITE_RADIUS_KM && (!best || d < best.d)) best = {code, d};
+  }
+  if(best) return {region: best.code, how: "site", km: best.d};
+
+  for(const code in MAPGEO)
+    if(pointInRing(lon, lat, MAPGEO[code])) return {region: code, how: "region", km: 0};
+  for(const [code, ring] of MAPEXTRA)
+    if(pointInRing(lon, lat, ring)) return {region: code, how: "region", km: 0};
+
+  let near = null;
+  for(const code in MAPGEO){
+    const r = MAPGEO[code];
+    const c = [r.reduce((a,p)=>a+p[0],0)/r.length, r.reduce((a,p)=>a+p[1],0)/r.length];
+    const d = kmBetween([lon, lat], c);
+    if(!near || d < near.d) near = {code, d};
+  }
+  return near ? {region: near.code, how: "nearest", km: near.d} : null;
+}
+
+/* --- habitat from Overpass ---------------------------------------------- */
+/* Tag -> habitat. Order matters: the first match on an element wins, so the
+   specific sits above the general. */
+const OSM_HABITAT = [
+  ["natural=coastline", "CST"], ["natural=beach", "CST"], ["natural=cliff", "CST"],
+  ["natural=wetland",   "RED"],
+  ["natural=water",     "FRW"], ["landuse=reservoir", "FRW"], ["landuse=basin", "FRW"],
+  ["waterway=river",    "FRW"], ["waterway=stream",   "FRW"], ["waterway=canal", "FRW"],
+  ["natural=wood",      "WOD"], ["landuse=forest",    "WOD"],
+  ["natural=moor",      "UPL"], ["natural=fell",      "UPL"],
+  ["natural=scree",     "UPL"], ["natural=bare_rock", "UPL"],
+  ["natural=heath",     "HTH"], ["natural=scrub",     "HTH"], ["natural=grassland","HTH"],
+  ["leisure=park",      "PRK"], ["landuse=recreation_ground","PRK"], ["leisure=garden","PRK"],
+  ["landuse=farmland",  "FRM"], ["landuse=meadow",    "FRM"], ["landuse=orchard","FRM"],
+  ["landuse=allotments","FRM"],
+  ["landuse=residential","SUB"],
+  ["landuse=retail",    "URB"], ["landuse=commercial","URB"], ["landuse=industrial","URB"]
+];
+/* Overpass mirrors, tried in order. A mirror that 404s or times out is
+   demoted so the next fix does not pay for it again — the same fix WorldHunt
+   needed once its main mirror started refusing traffic. */
+const OVERPASS = [
+  "https://overpass-api.de/api/interpreter",
+  "https://overpass.kumi.systems/api/interpreter",
+  "https://overpass.private.coffee/api/interpreter"
+];
+let mirrorOrder = (()=>{ try{ const s=localStorage.getItem("bh_mirror");
+  return s ? JSON.parse(s) : OVERPASS.slice(); }catch(e){ return OVERPASS.slice(); } })();
+function demoteMirror(url){
+  mirrorOrder = mirrorOrder.filter(u=>u!==url).concat([url]);
+  try{ localStorage.setItem("bh_mirror", JSON.stringify(mirrorOrder)); }catch(e){}
+}
+const HAB_RADIUS_M = 160;
+function overpassQuery(lon, lat){
+  const f = OSM_HABITAT.map(([kv]) => {
+    const [k, v] = kv.split("=");
+    return `way["${k}"="${v}"](around:${HAB_RADIUS_M},${lat},${lon});` +
+           `relation["${k}"="${v}"](around:${HAB_RADIUS_M},${lat},${lon});`;
+  }).join("");
+  return `[out:json][timeout:12];(${f});out tags 60;`;
+}
+/* Nearest-wins is wrong here: a river 150m away should not beat the wood you
+   are standing in. Score by how specific the tag is instead, and let the
+   count of matching elements break ties. */
+function habitatFromElements(els){
+  const score = {};
+  for(const el of els){
+    const t = el.tags || {};
+    for(const [kv, hab] of OSM_HABITAT){
+      const [k, v] = kv.split("=");
+      if(t[k] === v){ score[hab] = (score[hab] || 0) + 1; break; }
+    }
+  }
+  // A residential area almost always overlaps something else; only call it
+  // Suburban if nothing more specific turned up.
+  const specific = Object.keys(score).filter(h => h !== "SUB" && h !== "URB");
+  const pool = specific.length ? specific : Object.keys(score);
+  if(!pool.length) return null;
+  pool.sort((a,b) => score[b] - score[a]);
+  return {hab: pool[0], score, n: els.length};
+}
+let habCache = {};
+function cacheKey(lon, lat){ return lon.toFixed(3) + "," + lat.toFixed(3); }  // ~100m
+async function habitatFromFix(lon, lat){
+  const key = cacheKey(lon, lat);
+  if(habCache[key]) return habCache[key];
+  const body = "data=" + encodeURIComponent(overpassQuery(lon, lat));
+  for(const url of mirrorOrder.slice()){
+    try{
+      const ctrl = new AbortController();
+      const timer = setTimeout(()=>ctrl.abort(), 13000);
+      const res = await fetch(url, {method:"POST", body, signal:ctrl.signal});
+      clearTimeout(timer);
+      if(!res.ok){ demoteMirror(url); continue; }
+      const data = await res.json();
+      const got = habitatFromElements(data.elements || []);
+      if(got){ habCache[key] = got; return got; }
+      return null;                       // reached Overpass, genuinely nothing there
+    }catch(e){ demoteMirror(url); }
+  }
+  throw new Error("no Overpass mirror responded");
+}
+
+/* --- the GPS loop ------------------------------------------------------- */
+/* 100m accuracy, deliberately loose. A tight threshold silently rejects most
+   real-world fixes, which is the single worst bug WorldHunt had. */
+const ACCURACY_LIMIT_M = 100;
+let watchId = null, lastFix = null;
+function gpsStatus(msg, tone){
+  const el = $("#gpsNote"); if(!el) return;
+  el.textContent = msg;
+  el.style.color = tone === "bad" ? "var(--coral)" : tone === "good" ? "var(--accent)" : "var(--dim)";
+}
+function startGPS(){
+  if(!navigator.geolocation){ gpsStatus("This device has no location support.","bad"); return; }
+  gpsStatus("Waiting for a fix…");
+  watchId = navigator.geolocation.watchPosition(onFix,
+    err => gpsStatus("Location unavailable: " + err.message, "bad"),
+    {enableHighAccuracy:true, maximumAge:15000, timeout:20000});
+}
+function stopGPS(){
+  if(watchId !== null && navigator.geolocation) navigator.geolocation.clearWatch(watchId);
+  watchId = null;
+}
+async function onFix(pos){
+  const {longitude:lon, latitude:lat, accuracy:acc} = pos.coords;
+  if(acc > ACCURACY_LIMIT_M){ gpsStatus(`Fix is ±${Math.round(acc)}m — waiting for better.`); return; }
+  lastFix = {lon, lat, acc, t:Date.now()};
+  const r = regionFromFix(lon, lat);
+  if(r) cfg.region = r.region;
+  gpsStatus(`${RNAME[cfg.region]||cfg.region} · ±${Math.round(acc)}m · reading the map…`);
+  try{
+    const hab = await habitatFromFix(lon, lat);
+    if(hab){ cfg.hab = hab.hab;
+      gpsStatus(`${HABS.find(x=>x[0]===cfg.hab)[1]} · ${RNAME[cfg.region]||cfg.region} · ±${Math.round(acc)}m`, "good");
+    } else {
+      gpsStatus(`${RNAME[cfg.region]||cfg.region} · nothing mapped here, habitat unchanged`);
+    }
+  }catch(e){
+    gpsStatus(`${RNAME[cfg.region]||cfg.region} · map lookup failed, habitat unchanged`, "bad");
+  }
+  cfg.month = new Date().getMonth();
+  save(); renderSettings(); sync();
+}
+
+/* --- scan gating -------------------------------------------------------- */
+/* Free by default. Gated mode opens a scan every 5 minutes OR every 200m
+   walked, whichever comes first — walking should always be the faster route,
+   because the point of the app is to get you outside. */
+const GATE_MS = 5*60*1000, GATE_M = 200;
+let lastScan = {t:0, lon:null, lat:null};
+/* No fix means no distance credit. Returning Infinity here made mLeft compute
+   to zero and opened the gate immediately, so gated mode did nothing at all in
+   manual mode — you simply wait out the clock instead. */
+function metresWalked(){
+  if(!lastFix || lastScan.lon === null || lastScan.lat === null) return 0;
+  return kmBetween([lastScan.lon, lastScan.lat], [lastFix.lon, lastFix.lat]) * 1000;
+}
+function gateState(){
+  if(!cfg.gated) return {ok:true};
+  const msLeft = Math.max(0, GATE_MS - (Date.now() - lastScan.t));
+  const mLeft  = Math.max(0, GATE_M - metresWalked());
+  if(msLeft <= 0 || mLeft <= 0) return {ok:true};
+  return {ok:false, msLeft, mLeft};
+}
+function markScanned(){
+  lastScan = {t:Date.now(), lon:lastFix?lastFix.lon:null, lat:lastFix?lastFix.lat:null};
+  try{ localStorage.setItem("bh_lastscan", JSON.stringify(lastScan)); }catch(e){}
+}
+function renderGate(){
+  const btn = $("#scanBtn"); if(!btn) return;
+  const g = gateState();
+  btn.disabled = !g.ok;
+  if(g.ok){ btn.textContent = "SCAN"; return; }
+  const mins = Math.floor(g.msLeft/60000), secs = Math.floor(g.msLeft%60000/1000);
+  const dist = (lastFix && g.mLeft < GATE_M) ? ` · ${Math.round(g.mLeft)}m` : "";
+  btn.textContent = `${mins}:${String(secs).padStart(2,"0")}${dist}`;
+}
+setInterval(()=>{ if(cfg.gated) renderGate(); }, 1000);
 
 function scan(){
   const pool=currentPool();
@@ -1724,6 +1953,11 @@ function renderSettings(){
   opts($("#sWx"),WX.map(w=>[w[0],w[1]]),cfg.wx);
   opts($("#sGamma"),[[1.2,"1.2 — rares common"],[1.35,"1.35"],[1.5,"1.5 — default"],
     [1.7,"1.7"],[1.9,"1.9 — rares brutal"]],cfg.gamma);
+  opts($("#sSource"),[["manual","Manual — pick it yourself"],["gps","GPS — use where I am"]],cfg.source);
+  opts($("#sGate"),[[0,"Free — scan whenever"],[1,"Gated — every 5 min or 200m"]],cfg.gated?1:0);
+  $("#sRegion").disabled = cfg.source==="gps";
+  $("#sHab").disabled    = cfg.source==="gps";
+  $("#sMonth").disabled  = cfg.source==="gps";
   opts($("#sShiny"),[[2000,"1 in 2000 — live"],[200,"1 in 200"],[20,"1 in 20"],[1,"Every catch — testing"]],cfg.shiny);
 }
 $("#sRegion").onchange=e=>{cfg.region=e.target.value;sync();};
@@ -1732,6 +1966,16 @@ $("#sMonth").onchange =e=>{cfg.month=+e.target.value;sync();};
 $("#sWx").onchange    =e=>{cfg.wx=e.target.value;sync();};
 $("#sGamma").onchange =e=>{cfg.gamma=+e.target.value;sync();};
 $("#sShiny").onchange =e=>{cfg.shiny=+e.target.value;sync();};
+$("#sSource").onchange=e=>{
+  cfg.source=e.target.value; save(); renderSettings();
+  if(cfg.source==="gps"){ startGPS(); }
+  else { stopGPS(); gpsStatus("Using the pickers below."); }
+  sync();
+};
+$("#sGate").onchange  =e=>{ cfg.gated=e.target.value==="1"; save(); renderGate();
+  $("#trayNote").textContent = cfg.gated
+    ? "Gated scanning on — a scan opens every 5 minutes or 200m."
+    : ""; };
 function sync(){save();renderCtx();renderLog();}
 
 function randomise(){
@@ -1743,7 +1987,14 @@ function randomise(){
     (RNAME[cfg.region]||cfg.region)+" · "+HABS.find(h=>h[0]===cfg.hab)[1]+" · "+MONTHS[cfg.month];
 }
 $("#rndBtn").onclick=randomise; $("#rnd2").onclick=randomise;
-$("#scanBtn").onclick=scan;
+$("#scanBtn").onclick=()=>{
+  const g=gateState();
+  if(!g.ok){
+    $("#trayNote").textContent = "Not yet — walk on, or wait it out.";
+    return;
+  }
+  markScanned(); renderGate(); scan();
+};
 $("#resetBtn").onclick=()=>{if(confirm("Delete the entire collection? This cannot be undone."))
   {col={};feathers={flush:0,again:0,watch:0};armed=null;watchLeft=0;
    save();saveFeathers();renderLog();renderTray();alert("Collection reset.");}};
@@ -1921,7 +2172,10 @@ $$("nav button").forEach(b=>b.onclick=()=>{
 });
 
 /* ---------- boot ---------- */
-load(); loadFeathers(); renderSettings(); renderCredits(); renderTray(); renderCtx(); renderFilters(); renderLog();
+load(); loadFeathers(); renderSettings(); renderCredits(); renderTray();
+try{ const ls=localStorage.getItem("bh_lastscan"); if(ls) lastScan=JSON.parse(ls); }catch(e){}
+renderGate();
+if(cfg.source==="gps") startGPS(); else gpsStatus("Using the pickers below."); renderCtx(); renderFilters(); renderLog();
 /* Register the worker and actively check for updates. If a new build is found,
    activate it immediately and reload once — no more stale builds on mobile. */
 if("serviceWorker" in navigator){
