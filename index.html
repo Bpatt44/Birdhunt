@@ -847,6 +847,9 @@ function currentPool(){return deliverable(cfg.hab,cfg.month,cfg.region,cfg.gamma
    Variant keys resolve in this order: season, then sex, then default.
    ========================================================================== */
 const ART = {
+  "Blackcap": {variants:[
+    {k:"male",   label:"Male",   sex:"Male",   art:"blackcap-male"},
+    {k:"female", label:"Female", sex:"Female", art:"blackcap-female"}]},
   "Mallard": {variants:[
     {k:"male",   label:"Male",   sex:"Male",   art:"mallard-male"},
     {k:"female", label:"Female", sex:"Female", art:"mallard-female"}]},
@@ -947,8 +950,10 @@ function hasArt(sp){ return !!tileArt(sp); }
    source and licence confirming before this goes anywhere public.
    ========================================================================== */
 const CREDITS = {
+  "blackcap-male":   {by:"", lic:"PD", url:""},
+  "blackcap-female":   {by:"", lic:"PD", url:""},
   "house-sparrow-male":   {by:"", lic:"PD", url:""},
-  "house-sparrow-male":   {by:"", lic:"PD", url:""},
+  "house-sparrow-female":   {by:"", lic:"PD", url:""},
   "snow-bunting-male":   {by:"", lic:"PD", url:""},
   "snow-bunting-female": {by:"Charles J. Sharp", lic:"CC BY-SA 4.0",
                           url:"https://commons.wikimedia.org/w/index.php?curid=174919933",
