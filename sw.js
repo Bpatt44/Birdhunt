@@ -1,4 +1,4 @@
-/* BirdHunt service worker — v1.3.1
+/* BirdHunt service worker — v4.9
    NETWORK-FIRST for the HTML shell, cache-first for static assets.
 
    Why: a pure cache-first worker serves a stale index.html even after a new
@@ -6,11 +6,11 @@
    itself updates. Network-first on the shell means a deploy lands as soon as
    the device is online, and the cache is only used as an offline fallback.  */
 
-const CACHE = "birdhunt-v4.8.1";
+const CACHE = "birdhunt-v4.9";
 const SHELL = ["./", "./index.html", "./manifest.webmanifest"];
 
 self.addEventListener("install", e => {
-  self.skipWaiting();                       // take over immediately
+  self.skipWaiting();
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(SHELL)).catch(() => {}));
 });
 
@@ -22,14 +22,13 @@ self.addEventListener("activate", e => {
   );
 });
 
-// Lets the page force an update without the user deleting the app.
 self.addEventListener("message", e => {
   if (e.data === "SKIP_WAITING") self.skipWaiting();
 });
 
 self.addEventListener("fetch", e => {
   const url = new URL(e.request.url);
-  if (url.origin !== self.location.origin) return;   // never touch cross-origin
+  if (url.origin !== self.location.origin) return;
   if (e.request.method !== "GET") return;
 
   const isShell = e.request.mode === "navigate" ||
@@ -37,7 +36,6 @@ self.addEventListener("fetch", e => {
                   url.pathname.endsWith("index.html");
 
   if (isShell) {
-    // NETWORK FIRST — always try for a fresh build, fall back to cache offline.
     e.respondWith(
       fetch(e.request)
         .then(res => {
@@ -50,11 +48,6 @@ self.addEventListener("fetch", e => {
     return;
   }
 
-  // Art is cached ON FIRST USE, never precached. 262 species of photographs
-  // would be a huge first load; this way you only ever store the birds you
-  // have actually seen, and they stay available offline afterwards.
-
-  // Everything else: cache first, it never changes without a filename change.
   e.respondWith(
     caches.match(e.request).then(hit => hit || fetch(e.request).then(res => {
       if (res && res.status === 200 && res.type === "basic") {
