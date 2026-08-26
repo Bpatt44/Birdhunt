@@ -937,7 +937,9 @@ function fullFile(sp, v){
 const FULLART = new Set(["chough","ptarmigan-winter","ptarmigan-summer","capercaillie-male",
                          "crane","crested-tit","cirl-bunting-male","cirl-bunting-female",
                          "capercaillie-female",
-                         "golden-oriole-male","golden-oriole-female"]);
+                         "golden-oriole-male","golden-oriole-female",
+                         "golden-pheasant-male","golden-pheasant-female]);
+  
 /* For the log tile: the first variant that actually has a picture. */
 function tileArt(sp){
   const v = variantsOf(sp).find(x => x.art);
